@@ -1,0 +1,45 @@
+package su.knst.moneysaver
+package http.routers.transactions
+
+import http.directives.Auth
+import utils.{API, GsonMessage}
+import utils.G._
+
+import akka.http.scaladsl.model.StatusCodes
+import akka.http.scaladsl.server.Directives._
+import akka.http.scaladsl.server.Route
+import akka.http.scaladsl.unmarshalling.{FromEntityUnmarshaller, PredefinedFromEntityUnmarshallers}
+import com.google.inject.Inject
+
+import java.time.Instant
+import scala.reflect.ClassTag
+
+class TransactionsRouter @Inject()
+(
+  api: API,
+  auth: Auth
+) {
+
+  def route: Route = {
+    path("add") {
+      (post & auth) { user =>
+        entity(as[NewTransactionArgs]) { args => {
+          api.newTransaction(user.id, args.delta, args.tag, Instant.ofEpochSecond(args.date), args.account, args.description)
+
+          complete(StatusCodes.Created)
+        }
+       }
+      }
+    } ~ path("month") {
+      (get & auth & parameters("offset".as[Int].optional, "count".as[Int].optional)) { (user, offset, count) =>
+        complete(gson.toJson(api.getUserTransactionsPerMonth(user.id, offset.getOrElse(0), count.getOrElse(10))))
+      }
+    } ~ pathEnd {
+      (get & auth & parameters("offset".as[Int].optional, "count".as[Int].optional)) { (user, offset, count) =>
+        complete(gson.toJson(api.getUserTransactions(user.id, offset.getOrElse(0), count.getOrElse(10))))
+      }
+    }
+  }
+
+  class NewTransactionArgs(val delta: Double, val tag: Int, val date: Int, val account: Int, val description: String) extends GsonMessage
+}
