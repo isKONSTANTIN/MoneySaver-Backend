@@ -1,4 +1,3 @@
-unmanagedBase := baseDirectory.value / "libs"
 name := "MoneySaver"
 
 version := "0.1"
@@ -9,11 +8,14 @@ val AkkaVersion = "2.6.8"
 val AkkaHttpVersion = "10.2.7"
 
 enablePlugins(JooqCodegenPlugin)
-enablePlugins(JavaAppPackaging)
-enablePlugins(SystemdPlugin)
 
-rpmVendor := "knst.su"
-rpmLicense := Some("dont be a dick")
+assemblyMergeStrategy in assembly := {
+  case PathList("META-INF", "services", "java.sql.Driver") => MergeStrategy.concat
+  case PathList("META-INF", xs @ _*) => MergeStrategy.discard
+  case PathList("reference.conf") => MergeStrategy.concat
+  case x => MergeStrategy.first
+}
+
 Compile / discoveredMainClasses in Compile := Seq("su.knst.moneysaver.Main")
 
 sources in (Compile,doc) := Seq.empty
@@ -27,6 +29,7 @@ libraryDependencies ++= Seq(
   "org.apache.logging.log4j" % "log4j-to-slf4j" % "2.14.1",
   "com.github.tototoshi" %% "scala-csv" % "1.3.10",
   "org.postgresql" % "postgresql" % "42.3.1",
+  "org.postgresql" % "postgresql" % "9.4-1206-jdbc42",
   "org.scalaj" %% "scalaj-http" % "2.4.2",
   "org.jooq" % "jooq" % "3.15.5",
   "org.mindrot" % "jbcrypt" % "0.3m",

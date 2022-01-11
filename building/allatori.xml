@@ -1,0 +1,34 @@
+<config>
+	<input>
+        	<jar in="MoneySaver-assembly-0.1.jar" out="MoneySaver-0.1.jar"/>
+	</input>
+	<classpath />
+
+    <keep-names>
+        <class template="class su.knst.moneysaver.Main"/>
+    </keep-names>
+
+	<ignore-classes>
+        <class template="class afu.*"/>
+        <class template="class ch.*"/>
+        <class template="class javax.*"/>
+		<class template="class com.*"/>
+		<class template="class org.*"/>
+        <class template="class scala.*"/>
+        <class template="class scalaj.*"/>
+        <class template="class akka.*"/>
+        <class template="class io.*"/>
+        <class template="class xsd.*"/>
+	</ignore-classes>
+
+    <property name="default-package" value="su.knst.moneysaver"/>
+    <property name="force-default-package" value="enable"/>
+    <property name="inner-classes" value="remove"/>
+    <property name="extensive-flow-obfuscation" value="maximum"/>
+    <property name="fields-naming" value="real"/>
+    <property name="fields-naming" value="compact"/>
+    <property name="methods-naming" value="real"/>
+    <property name="methods-naming" value="compact"/>
+    
+    <property name="log-file" value="log.xml"/>
+</config>
