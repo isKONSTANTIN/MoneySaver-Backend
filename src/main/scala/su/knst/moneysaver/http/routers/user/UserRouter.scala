@@ -4,7 +4,7 @@ package http.routers.user
 import http.directives.Auth
 import utils.{API, GsonMessage}
 import utils.G.gson
-import utils.{API, GsonMessage}
+import utils.{API, HttpResult}
 import utils.G._
 import akka.http.scaladsl.model.StatusCodes
 import akka.http.scaladsl.server.Directives._
@@ -45,7 +45,7 @@ class UserRouter @Inject()
     }
   }
 
-  class AuthResult(val token: UUID, val email: String, val receiptToken: String)
+  class AuthResult(val token: UUID, val email: String, val receiptToken: String) extends HttpResult
   class UpdateReceiptArgs(val receipt: String) extends GsonMessage
   class AuthArgs(val email: String, val password: String) extends GsonMessage
 }

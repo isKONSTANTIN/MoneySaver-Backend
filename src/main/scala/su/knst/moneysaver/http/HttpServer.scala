@@ -88,6 +88,6 @@ class HttpServer @Inject()
   }
 
   def start(): Future[Http.ServerBinding] = {
-    Http().newServerAt("localhost", 8080).bind(routers)
+    Http().newServerAt("0.0.0.0", 8080).bind(routers)
   }
 }

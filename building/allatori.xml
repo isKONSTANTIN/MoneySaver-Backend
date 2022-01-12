@@ -6,6 +6,18 @@
 
     <keep-names>
         <class template="class su.knst.moneysaver.Main"/>
+
+        <class template="class * instanceof su.knst.moneysaver.utils.GsonMessage" ignore="true">
+            <field template="*"/>
+        </class>
+
+        <class template="class * instanceof su.knst.moneysaver.utils.HttpResult" ignore="true">
+            <field template="*"/>
+        </class>
+
+        <class template="class su.knst.moneysaver.objects.*" ignore="true">
+            <field template="*"/>
+        </class>
     </keep-names>
 
 	<ignore-classes>

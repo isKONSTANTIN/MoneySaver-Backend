@@ -3,7 +3,7 @@ package utils
 
 import com.google.inject.{Inject, Singleton}
 import org.jooq.impl.DSL._
-import objects.{RepeatTransaction, _}
+import objects.{RepeatTransaction, Transaction, _}
 import org.jooq.Configuration
 import org.jooq.impl.DSL
 import org.mindrot.jbcrypt.BCrypt
@@ -63,6 +63,11 @@ class API @Inject() (
       .where(USERS.EMAIL.eq(email))
       .fetchOptional()
       .map(r => r.into(classOf[User]))
+
+    if (optionalUser.isEmpty)
+      println("User is empty")
+    else if (!BCrypt.checkpw(password, optionalUser.get().password))
+      println("invalid pass")
 
     if (optionalUser.isEmpty || !BCrypt.checkpw(password, optionalUser.get().password))
       throw new UserNotAuthorizedException
@@ -330,6 +335,41 @@ class API @Inject() (
       .set(ACCOUNTS.AMOUNT, ACCOUNTS.AMOUNT.plus(delta))
       .where(ACCOUNTS.ID.eq(account))
       .execute()
+  }
+
+  def userOwnedTransaction(user: Int, transaction: Int): Boolean = {
+    database.context
+      .select(TRANSACTIONS.USER)
+      .from(TRANSACTIONS)
+      .where(TRANSACTIONS.ID.eq(transaction))
+      .fetchOptional().map[Boolean](_.value1() == user).orElse(false)
+  }
+
+  def cancelTransaction(id: Int): Unit ={
+    database.context.transaction(configuration => {
+      val optionalTransaction: Optional[Transaction] = DSL.using(configuration)
+        .selectFrom(TRANSACTIONS)
+        .where(TRANSACTIONS.ID.eq(id))
+        .forUpdate()
+        .fetchOptional()
+        .map(_.into(classOf[Transaction]))
+
+      if (!optionalTransaction.isEmpty){
+        val transaction: Transaction = optionalTransaction.get()
+
+        database.context
+          .update(ACCOUNTS)
+          .set(ACCOUNTS.AMOUNT, ACCOUNTS.AMOUNT.minus(transaction.delta))
+          .where(ACCOUNTS.ID.eq(transaction.account))
+          .execute()
+
+        database.context
+          .delete(TRANSACTIONS)
+          .where(TRANSACTIONS.ID.eq(id))
+          .execute()
+      }
+
+    })
   }
 
   def getUserFuturePlans(user: Int): util.List[Plan] = {
