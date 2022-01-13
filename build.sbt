@@ -29,6 +29,7 @@ libraryDependencies ++= Seq(
   "org.apache.logging.log4j" % "log4j-to-slf4j" % "2.14.1",
   "com.github.tototoshi" %% "scala-csv" % "1.3.10",
   "org.postgresql" % "postgresql" % "42.3.1" % JooqCodegen,
+  "org.postgresql" % "postgresql" % "42.3.1",
   "org.scalaj" %% "scalaj-http" % "2.4.2",
   "org.jooq" % "jooq" % "3.15.5",
   "org.mindrot" % "jbcrypt" % "0.3m",
