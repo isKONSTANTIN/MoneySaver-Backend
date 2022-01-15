@@ -43,7 +43,7 @@ class TagsRouter @Inject()
         api.editTag(args.id, args.name, args.kind, args.limit)
         complete(StatusCodes.OK)
       } else
-        complete(StatusCodes.BadRequest)
+        complete(StatusCodes.Forbidden)
     }
   }
 

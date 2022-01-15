@@ -50,7 +50,7 @@ class PlansRouter @Inject()
           api.completePlan(args.id)
           complete(StatusCodes.OK)
         }else
-          complete(StatusCodes.BadRequest)
+          complete(StatusCodes.Forbidden)
       }
       }
     }
@@ -63,7 +63,7 @@ class PlansRouter @Inject()
           api.failPlan(args.id)
           complete(StatusCodes.OK)
         }else
-          complete(StatusCodes.BadRequest)
+          complete(StatusCodes.Forbidden)
       }
       }
     }
@@ -72,11 +72,11 @@ class PlansRouter @Inject()
   def edit: Route = {
     (post & auth) { user =>
       entity(as[EditPlanArgs]) { args => {
-        if (api.userOwnedPlan(user.id, args.id) && api.userOwnedTag(user.id, args.tag) && api.userOwnedAccount(args.id, args.account)){
+        if (api.userOwnedPlan(user.id, args.id) && api.userOwnedTag(user.id, args.tag) && api.userOwnedAccount(user.id, args.account)){
           api.editPlan(args.id, args.delta, args.tag, Instant.ofEpochSecond(args.date), args.account, args.description, args.state)
           complete(StatusCodes.OK)
         }else{
-          complete(StatusCodes.BadRequest)
+          complete(StatusCodes.Forbidden)
         }
       }
       }

@@ -45,7 +45,7 @@ class RepeatTransactionsRouter @Inject()
           api.removeRepeatTransaction(args.id)
           complete(StatusCodes.OK)
         } else
-          complete(StatusCodes.BadRequest)
+          complete(StatusCodes.Forbidden)
       }
       }
     }
@@ -58,7 +58,7 @@ class RepeatTransactionsRouter @Inject()
           api.editRepeatTransaction(args.id, args.tag, args.delta, args.account, args.repeatArg, Instant.ofEpochSecond(args.lastRepeat), args.repeatFunc, args.description)
           complete(StatusCodes.OK)
         } else
-          complete(StatusCodes.BadRequest)
+          complete(StatusCodes.Forbidden)
       }
       }
     }
