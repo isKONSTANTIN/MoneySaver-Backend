@@ -43,12 +43,11 @@ class AccountsRouter @Inject()
   def setName: Route = {
     (post & auth) { user =>
       entity(as[SetNameAccountArgs]) { args => {
-        val userAccounts : mutable.Buffer[Account] = api.getUserAccounts(user.id).asScala
-        if (userAccounts.exists(a => a.id == args.id)) {
+        if (api.userOwnedAccount(user.id, args.id)) {
           api.setAccountName(args.id, args.name)
           complete(StatusCodes.OK)
         }else
-          complete(StatusCodes.BadRequest)
+          complete(StatusCodes.Forbidden)
       }
       }
     }

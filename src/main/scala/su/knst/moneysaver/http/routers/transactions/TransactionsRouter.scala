@@ -22,9 +22,12 @@ class TransactionsRouter @Inject()
   def add: Route = {
     (post & auth) { user =>
       entity(as[NewTransactionArgs]) { args => {
-        api.newTransaction(user.id, args.delta, args.tag, Instant.ofEpochSecond(args.date), args.account, args.description)
-
-        complete(StatusCodes.Created)
+        if (api.userOwnedTag(user.id, args.tag) && api.userOwnedAccount(user.id, args.account)) {
+          api.newTransaction(user.id, args.delta, args.tag, Instant.ofEpochSecond(args.date), args.account, args.description)
+          complete(StatusCodes.Created)
+        }else{
+          complete(StatusCodes.Forbidden)
+        }
       }
       }
     }

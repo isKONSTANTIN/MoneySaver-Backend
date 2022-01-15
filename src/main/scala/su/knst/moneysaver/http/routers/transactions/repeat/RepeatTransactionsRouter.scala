@@ -25,7 +25,12 @@ class RepeatTransactionsRouter @Inject()
   def add: Route = {
     (post & auth) { user =>
       entity(as[NewRepeatTransactionArgs]) { args => {
-        api.newRepeatTransaction(user.id, args.tag, args.delta, args.account, args.repeatArg, Instant.ofEpochSecond(args.startRepeat), args.repeatFunc, args.description)
+        if (api.userOwnedTag(user.id, args.tag) && api.userOwnedAccount(user.id, args.account)) {
+          api.newRepeatTransaction(user.id, args.tag, args.delta, args.account, args.repeatArg, Instant.ofEpochSecond(args.startRepeat), args.repeatFunc, args.description)
+          complete(StatusCodes.Created)
+        }else{
+          complete(StatusCodes.Forbidden)
+        }
 
         complete(StatusCodes.Created)
       }

@@ -64,11 +64,6 @@ class API @Inject() (
       .fetchOptional()
       .map(r => r.into(classOf[User]))
 
-    if (optionalUser.isEmpty)
-      println("User is empty")
-    else if (!BCrypt.checkpw(password, optionalUser.get().password))
-      println("invalid pass")
-
     if (optionalUser.isEmpty || !BCrypt.checkpw(password, optionalUser.get().password))
       throw new UserNotAuthorizedException
 
@@ -342,6 +337,30 @@ class API @Inject() (
       .select(TRANSACTIONS.USER)
       .from(TRANSACTIONS)
       .where(TRANSACTIONS.ID.eq(transaction))
+      .fetchOptional().map[Boolean](_.value1() == user).orElse(false)
+  }
+
+  def userOwnedTag(user: Int, tag: Int): Boolean = {
+    database.context
+      .select(TAGS.USER)
+      .from(TAGS)
+      .where(TAGS.ID.eq(tag))
+      .fetchOptional().map[Boolean](_.value1() == user).orElse(false)
+  }
+
+  def userOwnedAccount(user: Int, account: Int): Boolean = {
+    database.context
+      .select(ACCOUNTS.USER)
+      .from(ACCOUNTS)
+      .where(ACCOUNTS.ID.eq(account))
+      .fetchOptional().map[Boolean](_.value1() == user).orElse(false)
+  }
+
+  def userOwnedPlan(user: Int, plan: Int): Boolean = {
+    database.context
+      .select(PLANS.USER)
+      .from(PLANS)
+      .where(PLANS.ID.eq(plan))
       .fetchOptional().map[Boolean](_.value1() == user).orElse(false)
   }
 

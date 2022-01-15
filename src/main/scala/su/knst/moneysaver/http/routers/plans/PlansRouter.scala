@@ -26,9 +26,12 @@ class PlansRouter @Inject()
   def add: Route = {
     (post & auth) { user =>
       entity(as[NewPlanArgs]) { args => {
-        api.newPlan(user.id, args.delta, args.tag, Instant.ofEpochSecond(args.date), args.account, args.description, 0)
-
-        complete(StatusCodes.Created)
+        if (api.userOwnedTag(user.id, args.tag) && api.userOwnedAccount(user.id, args.account)) {
+          api.newPlan(user.id, args.delta, args.tag, Instant.ofEpochSecond(args.date), args.account, args.description, 0)
+          complete(StatusCodes.Created)
+        }else{
+          complete(StatusCodes.Forbidden)
+        }
       }
       }
     }
@@ -43,8 +46,7 @@ class PlansRouter @Inject()
   def completePlan: Route = {
     (post & auth) { user =>
       entity(as[CompletePlanArgs]) { args => {
-        val userPlans : mutable.Buffer[Plan] = api.getUserPlans(user.id).asScala
-        if (userPlans.exists(p => p.id == args.id)) {
+        if (api.userOwnedPlan(user.id, args.id)) {
           api.completePlan(args.id)
           complete(StatusCodes.OK)
         }else
@@ -57,8 +59,7 @@ class PlansRouter @Inject()
   def failPlan: Route = {
     (post & auth) { user =>
       entity(as[FailPlanArgs]) { args => {
-        val userPlans : mutable.Buffer[Plan] = api.getUserPlans(user.id).asScala
-        if (userPlans.exists(p => p.id == args.id)) {
+        if (api.userOwnedPlan(user.id, args.id)) {
           api.failPlan(args.id)
           complete(StatusCodes.OK)
         }else
@@ -71,8 +72,7 @@ class PlansRouter @Inject()
   def edit: Route = {
     (post & auth) { user =>
       entity(as[EditPlanArgs]) { args => {
-        val userPlans : mutable.Buffer[Plan] = api.getUserPlans(user.id).asScala
-        if (userPlans.exists(p => p.id == args.id)) {
+        if (api.userOwnedPlan(user.id, args.id) && api.userOwnedTag(user.id, args.tag) && api.userOwnedAccount(args.id, args.account)){
           api.editPlan(args.id, args.delta, args.tag, Instant.ofEpochSecond(args.date), args.account, args.description, args.state)
           complete(StatusCodes.OK)
         }else{

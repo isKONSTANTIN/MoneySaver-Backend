@@ -39,8 +39,7 @@ class TagsRouter @Inject()
 
   def edit: Route = {
     (post & auth & entity(as[EditTagArgs])) { (user, args) =>
-      val userTags : mutable.Buffer[Tag] = api.getUserTags(user.id).asScala
-      if (userTags.exists(t => t.id == args.id)){
+      if (api.userOwnedTag(user.id, args.id)){
         api.editTag(args.id, args.name, args.kind, args.limit)
         complete(StatusCodes.OK)
       } else
