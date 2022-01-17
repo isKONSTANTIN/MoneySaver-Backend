@@ -47,7 +47,7 @@ class API @Inject() (
 
     val newId = database.context
       .insertInto(USERS)
-      .set(USERS.EMAIL, email)
+      .set(USERS.EMAIL, email.trim)
       .set(USERS.PASSWORD, BCrypt.hashpw(password, BCrypt.gensalt(12)))
       .set(USERS.TOKEN, token)
       .set(USERS.RECEIPT_TOKEN, "")
@@ -70,7 +70,7 @@ class API @Inject() (
   def authUser(email: String, password: String): User = {
     val optionalUser: Optional[User] =
       database.context.selectFrom(USERS)
-      .where(USERS.EMAIL.eq(email))
+      .where(USERS.EMAIL.eq(email.trim))
       .fetchOptional()
       .map(r => r.into(classOf[User]))
 
@@ -123,7 +123,7 @@ class API @Inject() (
   def getUser(email: String) : User = {
     database.context
       .selectFrom(USERS)
-      .where(USERS.EMAIL.eq(email))
+      .where(USERS.EMAIL.eq(email.trim))
       .fetchOptional()
       .map(r => r.into(classOf[User]))
       .orElseThrow()
@@ -148,7 +148,7 @@ class API @Inject() (
     database.context
       .insertInto(TAGS)
       .set(TAGS.USER, Int.box(user))
-      .set(TAGS.NAME, name)
+      .set(TAGS.NAME, name.trim)
       .set(TAGS.KIND, Int.box(kind))
       .set(TAGS.LIMIT, Double.box(limit))
       .returningResult(TAGS.ID)
@@ -158,7 +158,7 @@ class API @Inject() (
   def editTag(id: Int, name: String, kind: Int, limit: Double): Unit ={
     database.context
       .update(TAGS)
-      .set(TAGS.NAME, name)
+      .set(TAGS.NAME, name.trim)
       .set(TAGS.KIND, Int.box(kind))
       .set(TAGS.LIMIT, Double.box(limit))
       .where(TAGS.ID.eq(id))
@@ -243,7 +243,7 @@ class API @Inject() (
       .set(REPEAT_TRANSACTIONS.LAST_REPEAT, lr)
       .set(REPEAT_TRANSACTIONS.NEXT_REPEAT, TaskTimes.get(repeatFunc)(lr, arg).withHour(12))
       .set(REPEAT_TRANSACTIONS.REPEAT_FUNC, Int.box(repeatFunc))
-      .set(REPEAT_TRANSACTIONS.DESCRIPTION, description)
+      .set(REPEAT_TRANSACTIONS.DESCRIPTION, description.trim)
       .execute()
   }
 
@@ -259,7 +259,7 @@ class API @Inject() (
       .set(REPEAT_TRANSACTIONS.LAST_REPEAT, lr)
       .set(REPEAT_TRANSACTIONS.NEXT_REPEAT, TaskTimes.get(repeatFunc)(lr, arg).withHour(12))
       .set(REPEAT_TRANSACTIONS.REPEAT_FUNC, Int.box(repeatFunc))
-      .set(REPEAT_TRANSACTIONS.DESCRIPTION, description)
+      .set(REPEAT_TRANSACTIONS.DESCRIPTION, description.trim)
       .where(REPEAT_TRANSACTIONS.ID.eq(Int.box(id)))
       .execute()
   }
@@ -349,7 +349,7 @@ class API @Inject() (
       .set(TRANSACTIONS.TAG, Int.box(tag))
       .set(TRANSACTIONS.DATE, LocalDateTime.ofInstant(date, ZoneId.systemDefault()))
       .set(TRANSACTIONS.ACCOUNT, Int.box(account))
-      .set(TRANSACTIONS.DESCRIPTION, description)
+      .set(TRANSACTIONS.DESCRIPTION, description.trim)
       .execute()
 
     database.context
@@ -433,7 +433,7 @@ class API @Inject() (
       .set(PLANS.TAG, Int.box(tag))
       .set(PLANS.DATE, LocalDateTime.ofInstant(date, ZoneId.systemDefault()))
       .set(PLANS.ACCOUNT, Int.box(account))
-      .set(PLANS.DESCRIPTION, description)
+      .set(PLANS.DESCRIPTION, description.trim)
       .set(PLANS.STATE, Int.box(state))
       .execute()
   }
@@ -445,7 +445,7 @@ class API @Inject() (
       .set(PLANS.TAG, Int.box(tag))
       .set(PLANS.DATE, LocalDateTime.ofInstant(date, ZoneId.systemDefault()))
       .set(PLANS.ACCOUNT, Int.box(account))
-      .set(PLANS.DESCRIPTION, description)
+      .set(PLANS.DESCRIPTION, description.trim)
       .set(PLANS.STATE, Int.box(state))
       .where(PLANS.ID.eq(id))
       .execute()
@@ -482,7 +482,7 @@ class API @Inject() (
     database.context
       .insertInto(ACCOUNTS)
       .set(ACCOUNTS.USER, Int.box(user))
-      .set(ACCOUNTS.NAME, name)
+      .set(ACCOUNTS.NAME, name.trim)
       .set(ACCOUNTS.AMOUNT, Double.box(0))
       .returningResult(ACCOUNTS.ID)
       .fetchOne().value1()
@@ -491,7 +491,7 @@ class API @Inject() (
   def setAccountName(id: Int, name: String): Unit ={
     database.context
       .update(ACCOUNTS)
-      .set(ACCOUNTS.NAME, name)
+      .set(ACCOUNTS.NAME, name.trim)
       .where(ACCOUNTS.ID.eq(id))
       .execute()
   }
