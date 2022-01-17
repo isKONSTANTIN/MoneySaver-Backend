@@ -19,6 +19,7 @@ import su.knst.moneysaver.http.routers.tags.TagsRouter
 import su.knst.moneysaver.http.routers.transactions.TransactionsRouter
 import su.knst.moneysaver.http.routers.transactions.repeat.RepeatTransactionsRouter
 import ch.megard.akka.http.cors.scaladsl.settings.CorsSettings
+import su.knst.moneysaver.http.routers.pushing.WebPushingRouter
 import su.knst.moneysaver.http.routers.receipt.ReceiptRouter
 import su.knst.moneysaver.http.routers.user.UserRouter
 import su.knst.moneysaver.services.ServiceCollector
@@ -39,7 +40,8 @@ class HttpServer @Inject()
   info: UserMainInfoRouter,
   collector: ServiceCollector,
   user: UserRouter,
-  receipt: ReceiptRouter
+  receipt: ReceiptRouter,
+  webPushing: WebPushingRouter
 ){
   def routers : Route = {
     val exceptionHandler = ExceptionHandler {
@@ -82,6 +84,10 @@ class HttpServer @Inject()
           pathPrefix("receipt") {
             receipt.route
           },
+
+          pathPrefix("pushing"){
+            webPushing.route
+          }
         )
       }
     }

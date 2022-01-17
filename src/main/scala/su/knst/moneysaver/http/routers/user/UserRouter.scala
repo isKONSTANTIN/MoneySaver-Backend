@@ -1,6 +1,7 @@
 package su.knst.moneysaver
 package http.routers.user
 
+import akka.actor.ActorSystem
 import http.directives.Auth
 import utils.{API, GsonMessage}
 import utils.G.gson
@@ -11,10 +12,14 @@ import akka.http.scaladsl.server.Directives._
 import akka.http.scaladsl.server.Route
 import akka.http.scaladsl.unmarshalling.{FromEntityUnmarshaller, PredefinedFromEntityUnmarshallers}
 import com.google.inject.Inject
-import su.knst.moneysaver.objects.User
+import com.wanari.webpush.{PushService, Subscription, Utils}
+import su.knst.moneysaver.objects.{PushNotification, User, UserNotificationData}
 
+import java.security.interfaces.{ECPrivateKey, ECPublicKey}
 import java.time.Instant
 import java.util.UUID
+import scala.concurrent.Await
+import scala.concurrent.duration.DurationInt
 import scala.reflect.ClassTag
 
 class UserRouter @Inject()

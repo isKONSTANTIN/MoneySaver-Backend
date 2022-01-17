@@ -1,7 +1,9 @@
 package su.knst.moneysaver
 package utils
 
+import akka.actor.ActorSystem
 import com.google.inject.{Inject, Singleton}
+import com.wanari.webpush.{PushService, Subscription, Utils}
 import org.jooq.impl.DSL._
 import objects.{RepeatTransaction, Transaction, _}
 import org.jooq.Configuration
@@ -15,10 +17,13 @@ import su.knst.moneysaver.public_.tables.Transactions._
 import su.knst.moneysaver.public_.tables.Users._
 import su.knst.moneysaver.public_.tables.Accounts._
 import su.knst.moneysaver.public_.tables.ServicesData._
+import su.knst.moneysaver.public_.tables.UsersNotifications._
 import su.knst.moneysaver.services.ServiceCollector
+import su.knst.moneysaver.utils.G.gson
 import su.knst.moneysaver.utils.config.MainConfig
 import su.knst.moneysaver.utils.time.{TaskScheduleScheme, TaskTimes}
 
+import java.security.interfaces.{ECPrivateKey, ECPublicKey}
 import java.time.temporal.ChronoUnit
 import scala.jdk.CollectionConverters._
 import scala.jdk.OptionConverters._
@@ -27,11 +32,16 @@ import java.util.{Optional, UUID}
 import java.time.{Instant, LocalDate, LocalDateTime, ZoneId, ZoneOffset}
 import scala.collection.convert.ImplicitConversions.`map AsJavaMap`
 import scala.collection.mutable
+import scala.concurrent.Await
+import scala.concurrent.duration.DurationInt
 @Singleton
 class API @Inject() (
   database: Database,
-  config: MainConfig
+  config: MainConfig,
+  implicit val system: ActorSystem
 ) {
+  private val domain = config.server.saveStringIfNull("url", "https://ms.knst.su/")
+
   def registerUser(email: String, password: String): UUID = {
     val token = UUID.randomUUID()
 
@@ -293,6 +303,23 @@ class API @Inject() (
         .set(REPEAT_TRANSACTIONS.NEXT_REPEAT, nextRepeat)
         .where(REPEAT_TRANSACTIONS.ID.eq(id))
         .execute()
+
+      val tagName = DSL.using(configuration)
+        .select(TAGS.NAME)
+        .from(TAGS)
+        .where(TAGS.ID.eq(rt.tag))
+        .fetchOptional().toScala
+        .map(_.value1())
+        .getOrElse("неизвестно")
+
+      sendNotificationToUser(rt.user,
+        new PushNotification("Автоматическая транзакция исполнилась",
+          s"Сумма: ${rt.delta}, тег: $tagName",
+          s"${domain}icon.png",
+          s"${domain}icon.png",
+          s"$domain"
+        )
+      )
     }
 
     database.context.transaction(configuration => {
@@ -522,5 +549,37 @@ class API @Inject() (
       .set(SERVICES_DATA.DATA, data)
       .where(SERVICES_DATA.VAR_NAME.eq(name).and(SERVICES_DATA.SERVICE.eq(service)))
       .execute()
+  }
+
+  def addUserNotificationData(user: Int, endpoint: String, auth: String, p256dh: String): Unit = {
+    database.context
+      .insertInto(USERS_NOTIFICATIONS)
+      .set(USERS_NOTIFICATIONS.USER_ID, Int.box(user))
+      .set(USERS_NOTIFICATIONS.ENDPOINT, endpoint)
+      .set(USERS_NOTIFICATIONS.AUTH, auth)
+      .set(USERS_NOTIFICATIONS.P256DH, p256dh)
+      .execute()
+  }
+
+  def sendNotificationToUser(user: Int, notification: PushNotification): Unit = {
+    val publicKey = config.webPush.saveStringIfNull("publicKey", "XXX")
+    val privateKey = config.webPush.saveStringIfNull("privateKey", "XXX")
+
+    if (publicKey.equals("XXX") || privateKey.equals("XXX"))
+      return
+
+    val vapidPublicKey: ECPublicKey = Utils.loadPublicKey(publicKey)
+    val vapidPrivateKey: ECPrivateKey = Utils.loadPrivateKey(privateKey)
+
+    val pushService = PushService(vapidPublicKey, vapidPrivateKey, domain)
+    val jsonNotify = gson.toJson(notification)
+
+    database.context
+      .selectFrom(USERS_NOTIFICATIONS)
+      .where(USERS_NOTIFICATIONS.USER_ID.eq(user))
+      .fetchArray()
+      .map[UserNotificationData](_.into(classOf[UserNotificationData]))
+      .map(d => Subscription(d.endpoint, d.p256dh, d.auth))
+      .foreach(pushService.send(_, jsonNotify))
   }
 }

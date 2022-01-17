@@ -32,6 +32,7 @@ libraryDependencies ++= Seq(
   "org.postgresql" % "postgresql" % "42.3.1",
   "org.scalaj" %% "scalaj-http" % "2.4.2",
   "org.jooq" % "jooq" % "3.15.5",
+  "com.wanari" %% "web-push" % "1.0-alfa",
   "org.mindrot" % "jbcrypt" % "0.3m",
   "org.jooq" % "jooq-codegen-maven" % "3.15.4",
   "org.jooq" % "jooq-meta" % "3.15.5",
