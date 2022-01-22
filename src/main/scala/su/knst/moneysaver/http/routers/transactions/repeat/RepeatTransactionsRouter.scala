@@ -4,6 +4,7 @@ package http.routers.transactions.repeat
 import http.directives.Auth
 import utils.{API, GsonMessage}
 import utils.G._
+
 import scala.jdk.CollectionConverters._
 import akka.http.scaladsl.model.StatusCodes
 import akka.http.scaladsl.server.Directives._
@@ -11,6 +12,7 @@ import akka.http.scaladsl.server.Route
 import akka.http.scaladsl.unmarshalling.{FromEntityUnmarshaller, PredefinedFromEntityUnmarshallers}
 import com.google.inject.Inject
 import su.knst.moneysaver.objects.{RepeatTransaction, Tag}
+import su.knst.moneysaver.utils.logger.DefaultLogger
 
 import java.time.Instant
 import scala.collection.mutable
@@ -21,18 +23,18 @@ class RepeatTransactionsRouter @Inject()
   api: API,
   auth: Auth
 ) {
+  protected val log: DefaultLogger = DefaultLogger("http", "repeat_transactions")
 
   def add: Route = {
     (post & auth) { user =>
       entity(as[NewRepeatTransactionArgs]) { args => {
         if (api.userOwnedTag(user.id, args.tag) && api.userOwnedAccount(user.id, args.account)) {
-          api.newRepeatTransaction(user.id, args.tag, args.delta, args.account, args.repeatArg, Instant.ofEpochSecond(args.startRepeat), args.repeatFunc, args.description)
+          val newId = api.newRepeatTransaction(user.id, args.tag, args.delta, args.account, args.repeatArg, Instant.ofEpochSecond(args.startRepeat), args.repeatFunc, args.description)
+          log.info(s"New repeat transaction #$newId added")
           complete(StatusCodes.Created)
         }else{
           complete(StatusCodes.Forbidden)
         }
-
-        complete(StatusCodes.Created)
       }
       }
     }
@@ -43,6 +45,7 @@ class RepeatTransactionsRouter @Inject()
       entity(as[RemoveRepeatTransactionArgs]) { args => {
         if (api.userOwnRepeatTransaction(user.id, args.id)){
           api.removeRepeatTransaction(args.id)
+          log.info(s"Repeat transaction #${args.id} removed")
           complete(StatusCodes.OK)
         } else
           complete(StatusCodes.Forbidden)

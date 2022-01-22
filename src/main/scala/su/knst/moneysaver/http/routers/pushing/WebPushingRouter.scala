@@ -11,6 +11,7 @@ import su.knst.moneysaver.http.directives.Auth
 import su.knst.moneysaver.{http, utils}
 import su.knst.moneysaver.objects.{Plan, Tag}
 import su.knst.moneysaver.utils.config.MainConfig
+import su.knst.moneysaver.utils.logger.DefaultLogger
 import su.knst.moneysaver.utils.{API, GsonMessage}
 import utils.G._
 
@@ -24,6 +25,7 @@ class WebPushingRouter @Inject()
   auth: Auth,
   config: MainConfig
 ) {
+  protected val log: DefaultLogger = DefaultLogger("http", "pushing")
 
   def publicKey : Route = {
     (get & auth) { user =>
@@ -35,7 +37,7 @@ class WebPushingRouter @Inject()
     (post & auth) { user =>
       entity(as[SetNotificationDataArgs]) { args => {
         api.addUserNotificationData(user.id, args.endpoint, args.auth, args.p256dh)
-
+        log.info(s"Added new notify device at user ${user.id}")
         complete(StatusCodes.Accepted)
       }
       }

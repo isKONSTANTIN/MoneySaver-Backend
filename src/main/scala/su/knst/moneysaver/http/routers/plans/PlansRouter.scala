@@ -13,6 +13,7 @@ import akka.http.scaladsl.server.Directives.{as, complete, entity, get, path, pa
 import akka.http.scaladsl.server.Route
 import com.google.inject.Inject
 import su.knst.moneysaver.objects.{Plan, Tag}
+import su.knst.moneysaver.utils.logger.DefaultLogger
 
 import java.time.Instant
 import scala.collection.mutable
@@ -22,12 +23,14 @@ class PlansRouter @Inject()
   api: API,
   auth: Auth
 ) {
+  protected val log: DefaultLogger = DefaultLogger("http", "plans")
 
   def add: Route = {
     (post & auth) { user =>
       entity(as[NewPlanArgs]) { args => {
         if (api.userOwnedTag(user.id, args.tag) && api.userOwnedAccount(user.id, args.account)) {
-          api.newPlan(user.id, args.delta, args.tag, Instant.ofEpochSecond(args.date), args.account, args.description, 0)
+          val newId = api.newPlan(user.id, args.delta, args.tag, Instant.ofEpochSecond(args.date), args.account, args.description, 0)
+          log.info(s"New plan #$newId created")
           complete(StatusCodes.Created)
         }else{
           complete(StatusCodes.Forbidden)
@@ -48,6 +51,7 @@ class PlansRouter @Inject()
       entity(as[CompletePlanArgs]) { args => {
         if (api.userOwnedPlan(user.id, args.id)) {
           api.completePlan(args.id)
+          log.info(s"Plan #${args.id} completed")
           complete(StatusCodes.OK)
         }else
           complete(StatusCodes.Forbidden)
@@ -61,6 +65,7 @@ class PlansRouter @Inject()
       entity(as[FailPlanArgs]) { args => {
         if (api.userOwnedPlan(user.id, args.id)) {
           api.failPlan(args.id)
+          log.info(s"Plan #${args.id} failed")
           complete(StatusCodes.OK)
         }else
           complete(StatusCodes.Forbidden)

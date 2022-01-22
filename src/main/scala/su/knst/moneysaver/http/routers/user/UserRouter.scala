@@ -14,6 +14,7 @@ import akka.http.scaladsl.unmarshalling.{FromEntityUnmarshaller, PredefinedFromE
 import com.google.inject.Inject
 import com.wanari.webpush.{PushService, Subscription, Utils}
 import su.knst.moneysaver.objects.{PushNotification, User, UserNotificationData}
+import su.knst.moneysaver.utils.logger.DefaultLogger
 
 import java.security.interfaces.{ECPrivateKey, ECPublicKey}
 import java.time.Instant
@@ -27,6 +28,7 @@ class UserRouter @Inject()
   api: API,
   auth: Auth
 ){
+  protected val log: DefaultLogger = DefaultLogger("http", "user")
 
   def route: Route = {
     path("auth") {
@@ -39,6 +41,7 @@ class UserRouter @Inject()
     } ~ path("updateReceiptToken") {
       (post & auth & entity(as[UpdateReceiptArgs])) { (user, receipt) => {
         api.updateUserReceiptToken(user.id, receipt.receipt)
+        log.info(s"Receipt token by ${user.id} updated")
         complete(StatusCodes.OK)
       }
       }

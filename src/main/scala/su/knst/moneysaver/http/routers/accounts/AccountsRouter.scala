@@ -13,6 +13,7 @@ import akka.http.scaladsl.server.Directives.{as, complete, entity, get, path, pa
 import akka.http.scaladsl.server.Route
 import com.google.inject.Inject
 import su.knst.moneysaver.objects.{Account, Plan, Tag}
+import su.knst.moneysaver.utils.logger.DefaultLogger
 
 import java.time.Instant
 import scala.collection.mutable
@@ -22,12 +23,14 @@ class AccountsRouter @Inject()
   api: API,
   auth: Auth
 ) {
+  protected val log: DefaultLogger = DefaultLogger("http", "accounts")
 
   def add: Route = {
     (post & auth) { user =>
       entity(as[NewAccountArgs]) { args => {
-        api.newAccount(user.id, args.name)
+        val newId = api.newAccount(user.id, args.name)
 
+        log.info(s"New account #$newId created")
         complete(StatusCodes.Created)
       }
       }
@@ -45,6 +48,7 @@ class AccountsRouter @Inject()
       entity(as[SetNameAccountArgs]) { args => {
         if (api.userOwnedAccount(user.id, args.id)) {
           api.setAccountName(args.id, args.name)
+          log.info(s"Account #${args.id} renamed to '${args.name}'")
           complete(StatusCodes.OK)
         }else
           complete(StatusCodes.Forbidden)

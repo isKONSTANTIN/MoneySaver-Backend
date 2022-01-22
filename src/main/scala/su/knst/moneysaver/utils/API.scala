@@ -21,6 +21,7 @@ import su.knst.moneysaver.public_.tables.UsersNotifications._
 import su.knst.moneysaver.services.ServiceCollector
 import su.knst.moneysaver.utils.G.gson
 import su.knst.moneysaver.utils.config.MainConfig
+import su.knst.moneysaver.utils.logger.DefaultLogger
 import su.knst.moneysaver.utils.time.{TaskScheduleScheme, TaskTimes}
 
 import java.security.interfaces.{ECPrivateKey, ECPublicKey}
@@ -30,7 +31,7 @@ import scala.jdk.OptionConverters._
 import java.{lang, util}
 import java.util.{Optional, UUID}
 import java.time.{Instant, LocalDate, LocalDateTime, ZoneId, ZoneOffset}
-import scala.collection.convert.ImplicitConversions.`map AsJavaMap`
+import scala.collection.convert.ImplicitConversions.{`collection AsScalaIterable`, `map AsJavaMap`}
 import scala.collection.mutable
 import scala.concurrent.Await
 import scala.concurrent.duration.DurationInt
@@ -40,7 +41,7 @@ class API @Inject() (
   config: MainConfig,
   implicit val system: ActorSystem
 ) {
-  private val domain = config.server.saveStringIfNull("url", "https://ms.knst.su/")
+  private implicit val domain: String = config.server.saveStringIfNull("url", "https://ms.knst.su/")
 
   def registerUser(email: String, password: String): UUID = {
     val token = UUID.randomUUID()
@@ -230,7 +231,7 @@ class API @Inject() (
       .fetchOptional().map[Boolean](r => r.value1().equals(user)).orElse(false)
   }
 
-  def newRepeatTransaction(user: Int, tag: Int, delta: Double, account: Int, arg: Int, startTime: Instant, repeatFunc: Int, description: String): Unit = {
+  def newRepeatTransaction(user: Int, tag: Int, delta: Double, account: Int, arg: Int, startTime: Instant, repeatFunc: Int, description: String): Int = {
     val lr: LocalDateTime = LocalDateTime.ofInstant(startTime, ZoneId.systemDefault())
 
     database.context
@@ -244,7 +245,8 @@ class API @Inject() (
       .set(REPEAT_TRANSACTIONS.NEXT_REPEAT, TaskTimes.get(repeatFunc)(lr, arg).withHour(12))
       .set(REPEAT_TRANSACTIONS.REPEAT_FUNC, Int.box(repeatFunc))
       .set(REPEAT_TRANSACTIONS.DESCRIPTION, description.trim)
-      .execute()
+      .returningResult(REPEAT_TRANSACTIONS.ID)
+      .fetchOne().value1()
   }
 
   def editRepeatTransaction(id: Int, tag: Int, delta: Double, account: Int, arg: Int, lastRepeat: Instant, repeatFunc: Int, description: String): Unit = {
@@ -313,11 +315,9 @@ class API @Inject() (
         .getOrElse("неизвестно")
 
       sendNotificationToUser(rt.user,
-        new PushNotification("Автоматическая транзакция исполнилась",
-          s"Сумма: ${rt.delta}, тег: $tagName",
-          s"${domain}icon.png",
-          s"${domain}icon.png",
-          s"$domain"
+        PushNotification.createDefault(
+          "Автоматическая транзакция исполнилась",
+          s"Сумма: ${rt.delta}, тег: $tagName"
         )
       )
     }
@@ -341,8 +341,8 @@ class API @Inject() (
       .execute()
   }
 
-  def newTransaction(user: Int, delta: Double, tag: Int, date: Instant, account: Int, description: String): Unit = {
-    database.context
+  def newTransaction(user: Int, delta: Double, tag: Int, date: Instant, account: Int, description: String): Int = {
+    val newId = database.context
       .insertInto(TRANSACTIONS)
       .set(TRANSACTIONS.USER, Int.box(user))
       .set(TRANSACTIONS.DELTA, Double.box(delta))
@@ -350,13 +350,16 @@ class API @Inject() (
       .set(TRANSACTIONS.DATE, LocalDateTime.ofInstant(date, ZoneId.systemDefault()))
       .set(TRANSACTIONS.ACCOUNT, Int.box(account))
       .set(TRANSACTIONS.DESCRIPTION, description.trim)
-      .execute()
+      .returningResult(TRANSACTIONS.ID)
+      .fetchOne().value1()
 
     database.context
       .update(ACCOUNTS)
       .set(ACCOUNTS.AMOUNT, ACCOUNTS.AMOUNT.plus(delta))
       .where(ACCOUNTS.ID.eq(account))
       .execute()
+
+    newId
   }
 
   def userOwnedTransaction(user: Int, transaction: Int): Boolean = {
@@ -425,7 +428,7 @@ class API @Inject() (
       .fetch().map(r => r.into(classOf[Plan]))
   }
 
-  def newPlan(user: Int, delta: Double, tag: Int, date: Instant, account: Int, description: String, state: Int): Unit = {
+  def newPlan(user: Int, delta: Double, tag: Int, date: Instant, account: Int, description: String, state: Int): Int = {
     database.context
       .insertInto(PLANS)
       .set(PLANS.USER, Int.box(user))
@@ -435,7 +438,8 @@ class API @Inject() (
       .set(PLANS.ACCOUNT, Int.box(account))
       .set(PLANS.DESCRIPTION, description.trim)
       .set(PLANS.STATE, Int.box(state))
-      .execute()
+      .returningResult(PLANS.ID)
+      .fetchOne().value1()
   }
 
   def editPlan(id: Int, delta: Double, tag: Int, date: Instant, account: Int, description: String, state: Int): Unit = {
@@ -561,12 +565,12 @@ class API @Inject() (
       .execute()
   }
 
-  def sendNotificationToUser(user: Int, notification: PushNotification): Unit = {
+  def sendNotificationToUser(user: Int, notification: PushNotification): Int = {
     val publicKey = config.webPush.saveStringIfNull("publicKey", "XXX")
     val privateKey = config.webPush.saveStringIfNull("privateKey", "XXX")
 
     if (publicKey.equals("XXX") || privateKey.equals("XXX"))
-      return
+      return 0
 
     val vapidPublicKey: ECPublicKey = Utils.loadPublicKey(publicKey)
     val vapidPrivateKey: ECPrivateKey = Utils.loadPrivateKey(privateKey)
@@ -574,12 +578,15 @@ class API @Inject() (
     val pushService = PushService(vapidPublicKey, vapidPrivateKey, domain)
     val jsonNotify = gson.toJson(notification)
 
-    database.context
+    val subscriptions = database.context
       .selectFrom(USERS_NOTIFICATIONS)
       .where(USERS_NOTIFICATIONS.USER_ID.eq(user))
-      .fetchArray()
+      .fetch()
       .map[UserNotificationData](_.into(classOf[UserNotificationData]))
       .map(d => Subscription(d.endpoint, d.p256dh, d.auth))
-      .foreach(pushService.send(_, jsonNotify))
+
+    subscriptions.foreach(pushService.send(_, jsonNotify))
+
+    subscriptions.size
   }
 }

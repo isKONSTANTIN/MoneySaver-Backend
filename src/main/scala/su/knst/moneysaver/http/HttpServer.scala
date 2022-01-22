@@ -23,6 +23,7 @@ import su.knst.moneysaver.http.routers.pushing.WebPushingRouter
 import su.knst.moneysaver.http.routers.receipt.ReceiptRouter
 import su.knst.moneysaver.http.routers.user.UserRouter
 import su.knst.moneysaver.services.ServiceCollector
+import su.knst.moneysaver.utils.logger.DefaultLogger
 
 import javax.inject.Inject
 import scala.concurrent.Future
@@ -43,10 +44,13 @@ class HttpServer @Inject()
   receipt: ReceiptRouter,
   webPushing: WebPushingRouter
 ){
+  protected val log: DefaultLogger = DefaultLogger("http")
+
   def routers : Route = {
     val exceptionHandler = ExceptionHandler {
       case _: UserNotAuthorizedException => complete(StatusCodes.Unauthorized)
       case e: Exception => {
+        log.error("Oops, unexpected error:")
         e.printStackTrace()
         complete(StatusCodes.InternalServerError, "Oops...")
       }

@@ -13,6 +13,7 @@ import akka.http.scaladsl.server.Directives.{as, complete, entity, get, path, pa
 import akka.http.scaladsl.server.Route
 import com.google.inject.Inject
 import su.knst.moneysaver.objects.Tag
+import su.knst.moneysaver.utils.logger.DefaultLogger
 
 import java.time.Instant
 import java.util
@@ -23,14 +24,15 @@ class TagsRouter @Inject()
   api: API,
   auth: Auth
 ) {
+  protected val log: DefaultLogger = DefaultLogger("http", "tags")
 
   def add: Route = {
     (post & auth & entity(as[NewTagArgs])) { (user, args) =>
       if (api.getUserTags(user.id).asScala.exists(t => t.name.equals(args.name)))
         complete(StatusCodes.Accepted)
       else {
-        api.newTag(user.id, args.name, args.kind, args.limit)
-
+        val newId = api.newTag(user.id, args.name, args.kind, args.limit)
+        log.info(s"New tag #$newId added")
         complete(StatusCodes.Created)
       }
 

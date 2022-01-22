@@ -9,6 +9,7 @@ import akka.http.scaladsl.server.Directives._
 import akka.http.scaladsl.server.Route
 import akka.http.scaladsl.unmarshalling.{FromEntityUnmarshaller, PredefinedFromEntityUnmarshallers}
 import com.google.inject.Inject
+import su.knst.moneysaver.utils.logger.DefaultLogger
 
 import java.time.Instant
 import scala.reflect.ClassTag
@@ -18,12 +19,15 @@ class TransactionsRouter @Inject()
   api: API,
   auth: Auth
 ) {
+  protected val log: DefaultLogger = DefaultLogger("http", "transactions")
 
   def add: Route = {
     (post & auth) { user =>
       entity(as[NewTransactionArgs]) { args => {
         if (api.userOwnedTag(user.id, args.tag) && api.userOwnedAccount(user.id, args.account)) {
-          api.newTransaction(user.id, args.delta, args.tag, Instant.ofEpochSecond(args.date), args.account, args.description)
+          val newId = api.newTransaction(user.id, args.delta, args.tag, Instant.ofEpochSecond(args.date), args.account, args.description)
+
+          log.info(s"New transaction #$newId added")
           complete(StatusCodes.Created)
         }else{
           complete(StatusCodes.Forbidden)
@@ -44,6 +48,7 @@ class TransactionsRouter @Inject()
       entity(as[CancelTransactionArgs]) { args => {
         if (api.userOwnedTransaction(user.id, args.id)){
           api.cancelTransaction(args.id)
+          log.info(s"Transaction #${args.id} canceled")
           complete(StatusCodes.Created)
         }else {
           complete(StatusCodes.Forbidden)

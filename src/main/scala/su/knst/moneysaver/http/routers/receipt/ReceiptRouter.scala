@@ -10,6 +10,7 @@ import scalaj.http.{Http, HttpOptions}
 import su.knst.moneysaver.http.directives.Auth
 import su.knst.moneysaver.objects.{Plan, Tag}
 import su.knst.moneysaver.utils.G.gson
+import su.knst.moneysaver.utils.logger.DefaultLogger
 import su.knst.moneysaver.{http, utils}
 import su.knst.moneysaver.utils.{API, GsonMessage}
 
@@ -23,11 +24,13 @@ class ReceiptRouter @Inject()
   api: API,
   auth: Auth
 ) {
+  protected val log: DefaultLogger = DefaultLogger("http", "receipt")
 
   def check: Route = {
     (get & auth & parameters("args".as[String])) { (user, args) =>
       val userToken = user.receiptToken
       val dargs = new String(Base64.getDecoder.decode(args))
+      log.info(s"User ${user.id} requested QR info: '$dargs'")
 
       complete(
         Http("https://proverkacheka.com/api/v1/check/get")
