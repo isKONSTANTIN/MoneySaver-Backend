@@ -45,11 +45,18 @@ object Main extends App {
     val future = server.start()
 
     while (true){
-      print("> ")
-      val line = readLine()
-      fileLogger.log(line + "\n")
+      try {
+        print("> ")
+        val line = readLine()
+        fileLogger.log(line + "\n")
 
-      inj.getInstance(classOf[CommandHandler])(line)
+        inj.getInstance(classOf[CommandHandler])(line)
+      }catch {
+        case e: Exception => {
+          logger.error("Error to process command:")
+          e.printStackTrace()
+        }
+      }
     }
 
     Await.result(future.flatMap(_.whenTerminated)(system.dispatcher), Duration.Inf)

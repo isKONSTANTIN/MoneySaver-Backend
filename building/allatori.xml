@@ -31,6 +31,7 @@
         <class template="class akka.*"/>
         <class template="class io.*"/>
         <class template="class xsd.*"/>
+        <class template="class pdi.*"/>
 	</ignore-classes>
 
     <property name="default-package" value="su.knst.moneysaver"/>
