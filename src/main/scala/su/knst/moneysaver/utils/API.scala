@@ -362,6 +362,41 @@ class API @Inject() (
     newId
   }
 
+  def editTransaction(id: Int, delta: Double, tag: Int, date: Instant, account: Int, description: String): Unit ={
+    database.context.transaction(configuration => {
+      val oldTransaction = DSL.using(configuration)
+        .selectFrom(TRANSACTIONS)
+        .where(TRANSACTIONS.ID.eq(id))
+        .forUpdate()
+        .fetchOptional()
+        .map(_.into(classOf[Transaction]))
+        .orElseThrow()
+
+      DSL.using(configuration)
+        .update(TRANSACTIONS)
+        .set(TRANSACTIONS.DELTA, Double.box(delta))
+        .set(TRANSACTIONS.TAG, Int.box(tag))
+        .set(TRANSACTIONS.DATE, LocalDateTime.ofInstant(date, ZoneId.systemDefault()))
+        .set(TRANSACTIONS.ACCOUNT, Int.box(account))
+        .set(TRANSACTIONS.DESCRIPTION, description)
+        .where(TRANSACTIONS.ID.eq(id))
+        .execute()
+
+      DSL.using(configuration)
+        .update(ACCOUNTS)
+        .set(ACCOUNTS.AMOUNT, ACCOUNTS.AMOUNT.minus(oldTransaction.delta))
+        .where(ACCOUNTS.ID.eq(oldTransaction.account))
+        .execute()
+
+      DSL.using(configuration)
+        .update(ACCOUNTS)
+        .set(ACCOUNTS.AMOUNT, ACCOUNTS.AMOUNT.plus(delta))
+        .where(ACCOUNTS.ID.eq(account))
+        .execute()
+
+      })
+  }
+
   def userOwnedTransaction(user: Int, transaction: Int): Boolean = {
     database.context
       .select(TRANSACTIONS.USER)

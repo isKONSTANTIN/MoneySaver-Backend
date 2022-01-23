@@ -43,13 +43,28 @@ class TransactionsRouter @Inject()
     }
   }
 
+  def edit: Route = {
+    (post & auth) { user =>
+      entity(as[EditTransactionArgs]) { args => {
+        if (api.userOwnedTransaction(user.id, args.id)){
+          api.editTransaction(args.id, args.delta, args.tag, Instant.ofEpochSecond(args.date), args.account, args.description)
+          log.info(s"Transaction #${args.id} edited")
+          complete(StatusCodes.OK)
+        }else {
+          complete(StatusCodes.Forbidden)
+        }
+      }
+      }
+    }
+  }
+
   def cancel: Route = {
     (post & auth) { user =>
       entity(as[CancelTransactionArgs]) { args => {
         if (api.userOwnedTransaction(user.id, args.id)){
           api.cancelTransaction(args.id)
           log.info(s"Transaction #${args.id} canceled")
-          complete(StatusCodes.Created)
+          complete(StatusCodes.OK)
         }else {
           complete(StatusCodes.Forbidden)
         }
@@ -67,6 +82,8 @@ class TransactionsRouter @Inject()
   def route: Route = {
     path("add") {
       add
+    } ~ path("edit") {
+      edit
     } ~ path("cancel") {
       cancel
     } ~ path("month") {
@@ -77,5 +94,6 @@ class TransactionsRouter @Inject()
   }
 
   class NewTransactionArgs(val delta: Double, val tag: Int, val date: Int, val account: Int, val description: String) extends GsonMessage
+  class EditTransactionArgs(val id: Int, val delta: Double, val tag: Int, val date: Int, val account: Int, val description: String) extends GsonMessage
   class CancelTransactionArgs(val id: Int) extends GsonMessage
 }
