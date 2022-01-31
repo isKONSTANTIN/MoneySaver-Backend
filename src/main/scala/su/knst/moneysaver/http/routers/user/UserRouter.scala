@@ -13,7 +13,7 @@ import akka.http.scaladsl.server.Route
 import akka.http.scaladsl.unmarshalling.{FromEntityUnmarshaller, PredefinedFromEntityUnmarshallers}
 import com.google.inject.Inject
 import com.wanari.webpush.{PushService, Subscription, Utils}
-import su.knst.moneysaver.objects.{PushNotification, User, UserNotificationData}
+import su.knst.moneysaver.objects.{AuthedUser, PushNotification, User, UserNotificationData}
 import su.knst.moneysaver.utils.logger.DefaultLogger
 
 import java.security.interfaces.{ECPrivateKey, ECPublicKey}
@@ -33,9 +33,9 @@ class UserRouter @Inject()
   def route: Route = {
     path("auth") {
       (post & entity(as[AuthArgs])) { args => {
-        val user : User = api.authUser(args.email, args.password)
+        val user : AuthedUser = api.authUser(args.email, args.password)
 
-        complete(gson.toJson(new AuthResult(user.token, user.email, user.receiptToken)))
+        complete(gson.toJson(user))
       }
       }
     } ~ path("updateReceiptToken") {

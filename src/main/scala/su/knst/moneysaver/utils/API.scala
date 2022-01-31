@@ -15,6 +15,7 @@ import su.knst.moneysaver.public_.tables.RepeatTransactions.REPEAT_TRANSACTIONS
 import su.knst.moneysaver.public_.tables.Tags._
 import su.knst.moneysaver.public_.tables.Transactions._
 import su.knst.moneysaver.public_.tables.Users._
+import su.knst.moneysaver.public_.tables.UsersSessions._
 import su.knst.moneysaver.public_.tables.Accounts._
 import su.knst.moneysaver.public_.tables.ServicesData._
 import su.knst.moneysaver.public_.tables.UsersNotifications._
@@ -50,10 +51,16 @@ class API @Inject() (
       .insertInto(USERS)
       .set(USERS.EMAIL, email.trim)
       .set(USERS.PASSWORD, BCrypt.hashpw(password, BCrypt.gensalt(12)))
-      .set(USERS.TOKEN, token)
       .set(USERS.RECEIPT_TOKEN, "")
       .returningResult(USERS.ID)
       .fetchOne().value1()
+
+    database.context
+      .insertInto(USERS_SESSIONS)
+      .set(USERS_SESSIONS.USER, newId)
+      .set(USERS_SESSIONS.SESSION, token)
+      .set(USERS_SESSIONS.EXPIRED_AT, LocalDateTime.now().plusDays(7))
+      .execute()
 
     val newAccountId = newAccount(newId, "Карта")
     newTag(newId, "Корректировка", 0, 0)
@@ -68,9 +75,9 @@ class API @Inject() (
     token
   }
 
-  def authUser(email: String, password: String): User = {
-    val optionalUser: Optional[User] =
-      database.context.selectFrom(USERS)
+  def authUser(email: String, password: String): AuthedUser = {
+    val optionalUser: Optional[User] = database.context
+      .selectFrom(USERS)
       .where(USERS.EMAIL.eq(email.trim))
       .fetchOptional()
       .map(r => r.into(classOf[User]))
@@ -79,17 +86,19 @@ class API @Inject() (
       throw new UserNotAuthorizedException
 
     val authedUser = optionalUser.get()
-
     val token = UUID.randomUUID()
 
     database.context
-      .update(USERS)
-      .set(USERS.TOKEN, token)
-      .where(USERS.ID.eq(authedUser.id))
+      .insertInto(USERS_SESSIONS)
+      .set(USERS_SESSIONS.USER, Int.box(authedUser.id))
+      .set(USERS_SESSIONS.SESSION, token)
+      .set(USERS_SESSIONS.EXPIRED_AT, LocalDateTime.now().plusDays(7))
       .execute()
 
-    new User(authedUser.id, authedUser.email, "****", token, authedUser.receiptToken)
+    AuthedUser(authedUser, token)
   }
+
+  def authUser(token: UUID): AuthedUser = AuthedUser(getUser(token), token)
 
   def updateUserReceiptToken(id: Int, token: String): Unit = {
     database.context
@@ -107,9 +116,9 @@ class API @Inject() (
       .execute()
 
     database.context
-      .update(USERS)
-      .set(USERS.TOKEN, UUID.randomUUID())
-      .where(USERS.ID.eq(id))
+      .update(USERS_SESSIONS)
+      .set(USERS_SESSIONS.EXPIRED_AT, LocalDateTime.now().minusSeconds(1))
+      .where(USERS_SESSIONS.USER.eq(id))
       .execute()
   }
 
@@ -131,11 +140,32 @@ class API @Inject() (
   }
 
   def getUser(token: UUID) : User = {
-    database.context.selectFrom(USERS)
-      .where(USERS.TOKEN.eq(token))
+    val session: UserSession = database.context
+      .selectFrom(USERS_SESSIONS)
+      .where(USERS_SESSIONS.SESSION.eq(token))
       .fetchOptional()
-      .map(r => r.into(classOf[User]))
+      .map(r => r.into(classOf[UserSession]))
       .orElseThrow(() => new UserNotAuthorizedException)
+
+    if (session.expiredAt.isAfter(Instant.now())){
+      database.context
+        .update(USERS_SESSIONS)
+        .set(USERS_SESSIONS.EXPIRED_AT, LocalDateTime.now().plusDays(7))
+        .where(USERS_SESSIONS.ID.eq(session.id))
+        .execute()
+
+      getUser(session.user)
+    }else{
+      throw new UserNotAuthorizedException
+    }
+  }
+
+  def getUserSessions(user: Int): util.List[UserSession] = {
+    database.context
+      .selectFrom(USERS_SESSIONS)
+      .where(USERS_SESSIONS.USER.eq(user))
+      .fetch()
+      .map(_.into(classOf[UserSession]))
   }
 
   def getUserTags(user: Int): util.List[Tag] = {

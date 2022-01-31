@@ -6,10 +6,9 @@ import su.knst.moneysaver.utils.API
 import java.util.Optional
 import javax.inject.Inject
 
-abstract class AbstractService(val api: API) {
+abstract class AbstractService(val api: API) extends Runnable {
   def repeatTime(): Long
   def name(): String
-  def run(): Unit
 
   def getData(name: String): Option[String] = api.getServiceData(this.name(), name)
   def setData(name: String, data: String): Unit = api.setServiceData(this.name(), name, data)

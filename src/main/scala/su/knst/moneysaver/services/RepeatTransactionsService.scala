@@ -23,6 +23,5 @@ class RepeatTransactionsService @Inject()
         log.error("Error processing repeat transactions:")
         e.printStackTrace()
     }
-
   }
 }
