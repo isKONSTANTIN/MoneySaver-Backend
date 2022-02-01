@@ -168,6 +168,25 @@ class API @Inject() (
       .map(_.into(classOf[UserSession]))
   }
 
+  def getUserActiveSessions(user: Int): util.List[UserSession] = {
+    database.context
+      .selectFrom(USERS_SESSIONS)
+      .where(
+        USERS_SESSIONS.USER.eq(user)
+          .and(USERS_SESSIONS.EXPIRED_AT.greaterThan(LocalDateTime.now()))
+      )
+      .fetch()
+      .map(_.into(classOf[UserSession]))
+  }
+
+  def deactivateUserSession(token: UUID): Unit = {
+    database.context
+      .update(USERS_SESSIONS)
+      .set(USERS_SESSIONS.EXPIRED_AT, LocalDateTime.now().minusSeconds(1))
+      .where(USERS_SESSIONS.SESSION.eq(token))
+      .execute()
+  }
+
   def getUserTags(user: Int): util.List[Tag] = {
     database.context.selectFrom(TAGS)
       .where(TAGS.USER.eq(user))

@@ -13,6 +13,8 @@ import akka.http.scaladsl.server.Route
 import akka.http.scaladsl.unmarshalling.{FromEntityUnmarshaller, PredefinedFromEntityUnmarshallers}
 import com.google.inject.Inject
 import com.wanari.webpush.{PushService, Subscription, Utils}
+import org.mindrot.jbcrypt.BCrypt
+import su.knst.moneysaver.exceptions.{UserNotAuthorizedException, WrongPasswordException}
 import su.knst.moneysaver.objects.{AuthedUser, PushNotification, User, UserNotificationData}
 import su.knst.moneysaver.utils.logger.DefaultLogger
 
@@ -30,30 +32,80 @@ class UserRouter @Inject()
 ){
   protected val log: DefaultLogger = DefaultLogger("http", "user")
 
+  def authR: Route = {
+    (post & entity(as[AuthArgs])) { args => {
+      val user : AuthedUser = api.authUser(args.email, args.password)
+
+      complete(gson.toJson(user))
+    }
+    }
+  }
+
+  def updateReceiptToken(): Route = {
+    (post & auth & entity(as[UpdateReceiptArgs])) { (user, receipt) => {
+      api.updateUserReceiptToken(user.id, receipt.receipt)
+      log.info(s"Receipt token by ${user.id} updated")
+      complete(StatusCodes.OK)
+    }
+    }
+  }
+
+  def changePassword: Route = {
+    (post & auth & entity(as[UpdatePasswordArgs])) { (user, args) => {
+      if (!BCrypt.checkpw(args.oldPassword, api.getUser(user.email).password))
+        throw new WrongPasswordException
+
+      api.changePasswordUser(user.id, args.newPassword)
+
+      complete(StatusCodes.OK)
+    }
+    }
+  }
+
+  def deactivateSession: Route = {
+    (post & auth & entity(as[DeactivateSessionArgs])) { (user, args) => {
+      if (api.getUser(args.session).id != user.id)
+        throw new UserNotAuthorizedException
+
+      api.deactivateUserSession(args.session)
+      complete(StatusCodes.OK)
+    }
+    }
+  }
+
+  def getSessions: Route = {
+    (get & auth) { user => {
+      complete(gson.toJson(api.getUserActiveSessions(user.id)))
+    }
+    }
+  }
+
+  def main: Route = {
+    (get & auth) { user => {
+      complete(gson.toJson(new AuthResult(user.token, user.email, user.receiptToken)))
+    }
+    }
+  }
+
   def route: Route = {
     path("auth") {
-      (post & entity(as[AuthArgs])) { args => {
-        val user : AuthedUser = api.authUser(args.email, args.password)
-
-        complete(gson.toJson(user))
-      }
-      }
+      authR
     } ~ path("updateReceiptToken") {
-      (post & auth & entity(as[UpdateReceiptArgs])) { (user, receipt) => {
-        api.updateUserReceiptToken(user.id, receipt.receipt)
-        log.info(s"Receipt token by ${user.id} updated")
-        complete(StatusCodes.OK)
-      }
-      }
+      updateReceiptToken()
+    } ~ path("changePassword") {
+      changePassword
+    } ~ path("getSessions") {
+      getSessions
+    }  ~ path("deactivateSession") {
+      deactivateSession
     } ~ pathEnd {
-      (get & auth) { user => {
-        complete(gson.toJson(new AuthResult(user.token, user.email, user.receiptToken)))
-      }
-      }
+      main
     }
   }
 
   class AuthResult(val token: UUID, val email: String, val receiptToken: String) extends HttpResult
   class UpdateReceiptArgs(val receipt: String) extends GsonMessage
+  class UpdatePasswordArgs(val oldPassword: String, val newPassword: String) extends GsonMessage
+  class DeactivateSessionArgs(val session: UUID) extends GsonMessage
   class AuthArgs(val email: String, val password: String) extends GsonMessage
 }

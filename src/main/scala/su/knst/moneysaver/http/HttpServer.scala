@@ -10,7 +10,7 @@ import akka.http.scaladsl.settings.RoutingSettings
 import com.google.inject.Singleton
 import ch.megard.akka.http.cors.scaladsl.CorsDirectives._
 import com.sun.net.httpserver.HttpServer
-import su.knst.moneysaver.exceptions.UserNotAuthorizedException
+import su.knst.moneysaver.exceptions.{UserNotAuthorizedException, WrongPasswordException}
 import su.knst.moneysaver.http.routers._
 import su.knst.moneysaver.http.routers.accounts.AccountsRouter
 import su.knst.moneysaver.http.routers.info.UserMainInfoRouter
@@ -49,6 +49,7 @@ class HttpServer @Inject()
   def routers : Route = {
     val exceptionHandler = ExceptionHandler {
       case _: UserNotAuthorizedException => complete(StatusCodes.Unauthorized)
+      case _: WrongPasswordException => complete(StatusCodes.Unauthorized, "Wrong password")
       case e: Exception => {
         log.error("Oops, unexpected error:")
         e.printStackTrace()
