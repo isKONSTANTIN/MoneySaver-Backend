@@ -16,7 +16,7 @@ import su.knst.moneysaver.objects.Tag
 
 import java.io.File
 import java.text.DateFormatSymbols
-import java.time.LocalDateTime
+import java.time.{LocalDate, LocalDateTime}
 import java.util
 import scala.collection.mutable
 
@@ -33,7 +33,7 @@ class UserMainInfoRouter @Inject()
     val months: Seq[String] = new DateFormatSymbols(new util.Locale("ru")).getShortMonths.toSeq
     val tmpFile: File = File.createTempFile(util.UUID.randomUUID().toString + LocalDateTime.now().toString, ".tmp")
 
-    val writer = CSVWriter.open(tmpFile)
+    val writer = CSVWriter.open(tmpFile, "Windows-1251")
 
     val dataFilter: Int => List[Double] =
       id =>
@@ -82,6 +82,12 @@ class UserMainInfoRouter @Inject()
       pathEnd {
         (get & auth) {
           user => complete(gson.toJson(api.changesPerMonthByTags(user.id)))
+        }
+      }
+    } ~ path("dayChanges") {
+      pathEnd {
+        (get & auth & parameters("year".as[Int], "month".as[Int], "day".as[Int])) {
+          (user, year, month, day) => complete(gson.toJson(api.changesAtDayByTags(user.id, LocalDate.of(year, month, day))))
         }
       }
     } ~ path("yearChanges") {

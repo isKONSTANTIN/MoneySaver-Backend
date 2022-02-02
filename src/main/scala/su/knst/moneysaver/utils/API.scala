@@ -31,7 +31,7 @@ import scala.jdk.CollectionConverters._
 import scala.jdk.OptionConverters._
 import java.{lang, util}
 import java.util.{Optional, UUID}
-import java.time.{Instant, LocalDate, LocalDateTime, ZoneId, ZoneOffset}
+import java.time.{Instant, LocalDate, LocalDateTime, LocalTime, ZoneId, ZoneOffset}
 import scala.collection.convert.ImplicitConversions.{`collection AsScalaIterable`, `map AsJavaMap`}
 import scala.collection.mutable
 import scala.concurrent.Await
@@ -607,6 +607,32 @@ class API @Inject() (
       .where(ACCOUNTS.USER.eq(user))
       .orderBy(ACCOUNTS.ID)
       .fetch().map(r => r.into(classOf[Account]))
+  }
+
+  def transactionsAtDay(user: Int, date: LocalDate): util.List[Transaction] = {
+    database.context
+      .selectFrom(TRANSACTIONS)
+      .where(TRANSACTIONS.USER.eq(user)
+        .and(TRANSACTIONS.DATE.between(date.atStartOfDay(), date.atTime(LocalTime.MAX)))
+      )
+      .fetch()
+      .map(r => r.into(classOf[Transaction]))
+  }
+
+  def changesAtDayByTags(user: Int, date: LocalDate): util.Map[Int, Double] = {
+    val transactions = transactionsAtDay(user, date).asScala
+
+    var result : Map[Int, Double] =
+      transactions
+        .groupMap(_.tag)(_.delta)
+        .map { case (k, v) => k -> v.sum }
+
+    getUserTags(user).asScala
+      .foreach(t => {
+        if (!result.contains(t.id)) result = result + (t.id -> 0)
+      })
+
+    result.asJava
   }
 
   def changesPerMonthByTags(user: Int): util.Map[Int, Double] ={
