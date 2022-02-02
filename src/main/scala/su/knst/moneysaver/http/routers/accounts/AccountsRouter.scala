@@ -43,6 +43,23 @@ class AccountsRouter @Inject()
     }
   }
 
+  def transfer: Route = {
+    (post & auth) { user =>
+      entity(as[TransferArgs]) { args => {
+        val userAccounts = api.getUserAccounts(user.id).asScala
+        if (!userAccounts.exists(_.id == args.from) || !userAccounts.exists(_.id == args.to) || args.amount <= 0){
+          complete(StatusCodes.BadRequest)
+        }else {
+          api.accountTransfer(args.from, args.to, args.amount)
+
+          log.info(s"New account transfer: ${args.from} -> ${args.to}: ${args.amount}")
+          complete(StatusCodes.OK)
+        }
+      }
+      }
+    }
+  }
+
   def setName: Route = {
     (post & auth) { user =>
       entity(as[SetNameAccountArgs]) { args => {
@@ -60,6 +77,8 @@ class AccountsRouter @Inject()
   def route: Route = {
     path("add") {
       add
+    } ~ path("transfer"){
+      transfer
     } ~ path("setName") {
       setName
     } ~ pathEnd {
@@ -68,5 +87,6 @@ class AccountsRouter @Inject()
   }
 
   class SetNameAccountArgs(val id: Int, val name: String) extends GsonMessage
+  class TransferArgs(val from: Int, val to: Int, val amount: Double) extends GsonMessage
   class NewAccountArgs(val name: String) extends GsonMessage
 }

@@ -480,7 +480,8 @@ class API @Inject() (
 
   def cancelTransaction(id: Int): Unit ={
     database.context.transaction(configuration => {
-      val optionalTransaction: Optional[Transaction] = DSL.using(configuration)
+      val optionalTransaction: Optional[Transaction] =
+        DSL.using(configuration)
         .selectFrom(TRANSACTIONS)
         .where(TRANSACTIONS.ID.eq(id))
         .forUpdate()
@@ -490,13 +491,13 @@ class API @Inject() (
       if (!optionalTransaction.isEmpty){
         val transaction: Transaction = optionalTransaction.get()
 
-        database.context
+        DSL.using(configuration)
           .update(ACCOUNTS)
           .set(ACCOUNTS.AMOUNT, ACCOUNTS.AMOUNT.minus(transaction.delta))
           .where(ACCOUNTS.ID.eq(transaction.account))
           .execute()
 
-        database.context
+        DSL.using(configuration)
           .delete(TRANSACTIONS)
           .where(TRANSACTIONS.ID.eq(id))
           .execute()
@@ -583,6 +584,22 @@ class API @Inject() (
       .where(ACCOUNTS.ID.eq(id))
       .execute()
   }
+
+  def accountTransfer(from: Int, to: Int, amount: Double): Unit = {
+    database.context.transaction(configuration => {
+      DSL.using(configuration)
+        .update(ACCOUNTS)
+        .set(ACCOUNTS.AMOUNT, ACCOUNTS.AMOUNT.minus(amount))
+        .where(ACCOUNTS.ID.eq(from))
+        .execute()
+
+      DSL.using(configuration)
+        .update(ACCOUNTS)
+        .set(ACCOUNTS.AMOUNT, ACCOUNTS.AMOUNT.plus(amount))
+        .where(ACCOUNTS.ID.eq(to))
+        .execute()
+    })
+}
 
   def getUserAccounts(user: Int): util.List[Account] = {
     database.context
