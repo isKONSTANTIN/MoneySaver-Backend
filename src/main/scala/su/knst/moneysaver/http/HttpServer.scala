@@ -32,7 +32,6 @@ import scala.concurrent.Future
 class HttpServer @Inject()
 (
   implicit system: ActorSystem,
-  helloWorldRouter: HelloWorldRouter,
   transactions: TransactionsRouter,
   repeatTransactions: RepeatTransactionsRouter,
   tags: TagsRouter,

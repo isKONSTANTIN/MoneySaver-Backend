@@ -3,9 +3,9 @@ package http.routers.user
 
 import akka.actor.ActorSystem
 import http.directives.Auth
-import utils.{API, GsonMessage}
+import utils.GsonMessage
 import utils.G.gson
-import utils.{API, HttpResult}
+import utils.HttpResult
 import utils.G._
 import akka.http.scaladsl.model.StatusCodes
 import akka.http.scaladsl.server.Directives._
@@ -27,14 +27,14 @@ import scala.reflect.ClassTag
 
 class UserRouter @Inject()
 (
-  api: API,
+  db: UsersDatabase,
   auth: Auth
 ){
   protected val log: DefaultLogger = DefaultLogger("http", "user")
 
   def authR: Route = {
     (post & entity(as[AuthArgs])) { args => {
-      val user : AuthedUser = api.authUser(args.email, args.password)
+      val user : AuthedUser = db.authUser(args.email, args.password)
 
       complete(gson.toJson(user))
     }
@@ -43,7 +43,7 @@ class UserRouter @Inject()
 
   def updateReceiptToken(): Route = {
     (post & auth & entity(as[UpdateReceiptArgs])) { (user, receipt) => {
-      api.updateUserReceiptToken(user.id, receipt.receipt)
+      db.updateUserReceiptToken(user.id, receipt.receipt)
       log.info(s"Receipt token by ${user.id} updated")
       complete(StatusCodes.OK)
     }
@@ -52,10 +52,10 @@ class UserRouter @Inject()
 
   def changePassword: Route = {
     (post & auth & entity(as[UpdatePasswordArgs])) { (user, args) => {
-      if (!BCrypt.checkpw(args.oldPassword, api.getUser(user.email).password))
+      if (!BCrypt.checkpw(args.oldPassword, db.getUser(user.email).password))
         throw new WrongPasswordException
 
-      api.changePasswordUser(user.id, args.newPassword)
+      db.changePasswordUser(user.id, args.newPassword)
 
       complete(StatusCodes.OK)
     }
@@ -64,10 +64,10 @@ class UserRouter @Inject()
 
   def deactivateSession: Route = {
     (post & auth & entity(as[DeactivateSessionArgs])) { (user, args) => {
-      if (api.getUser(args.session).id != user.id)
+      if (db.getUser(args.session).id != user.id)
         throw new UserNotAuthorizedException
 
-      api.deactivateUserSession(args.session)
+      db.deactivateUserSession(args.session)
       complete(StatusCodes.OK)
     }
     }
@@ -75,7 +75,7 @@ class UserRouter @Inject()
 
   def getSessions: Route = {
     (get & auth) { user => {
-      complete(gson.toJson(api.getUserActiveSessions(user.id)))
+      complete(gson.toJson(db.getUserActiveSessions(user.id)))
     }
     }
   }

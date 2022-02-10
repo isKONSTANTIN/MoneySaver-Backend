@@ -3,7 +3,7 @@ package http.routers.plans
 
 import http.directives.Auth
 import utils.G.gson
-import utils.{API, GsonMessage}
+import utils.GsonMessage
 import utils.G._
 
 import scala.jdk.CollectionConverters._
@@ -12,6 +12,8 @@ import akka.http.scaladsl.model.StatusCodes
 import akka.http.scaladsl.server.Directives.{as, complete, entity, get, path, pathEnd, post}
 import akka.http.scaladsl.server.Route
 import com.google.inject.Inject
+import su.knst.moneysaver.http.routers.accounts.AccountsDatabase
+import su.knst.moneysaver.http.routers.tags.TagsDatabase
 import su.knst.moneysaver.objects.{Plan, Tag}
 import su.knst.moneysaver.utils.logger.DefaultLogger
 
@@ -20,7 +22,9 @@ import scala.collection.mutable
 
 class PlansRouter @Inject()
 (
-  api: API,
+  db: PlansDatabase,
+  tags: TagsDatabase,
+  accounts: AccountsDatabase,
   auth: Auth
 ) {
   protected val log: DefaultLogger = DefaultLogger("http", "plans")
@@ -28,8 +32,8 @@ class PlansRouter @Inject()
   def add: Route = {
     (post & auth) { user =>
       entity(as[NewPlanArgs]) { args => {
-        if (api.userOwnedTag(user.id, args.tag) && api.userOwnedAccount(user.id, args.account)) {
-          val newId = api.newPlan(user.id, args.delta, args.tag, Instant.ofEpochSecond(args.date), args.account, args.description, 0)
+        if (tags.userOwnedTag(user.id, args.tag) && accounts.userOwnedAccount(user.id, args.account)) {
+          val newId = db.newPlan(user.id, args.delta, args.tag, Instant.ofEpochSecond(args.date), args.account, args.description, 0)
           log.info(s"New plan #$newId created")
           complete(StatusCodes.Created)
         }else{
@@ -42,15 +46,15 @@ class PlansRouter @Inject()
 
   def getAll: Route = {
     (get & auth & parameters("offset".as[Int].optional, "count".as[Int].optional)) { (user, offset, count) =>
-      complete(gson.toJson(api.getUserPlans(user.id, offset.getOrElse(0), count.getOrElse(0))))
+      complete(gson.toJson(db.getUserPlans(user.id, offset.getOrElse(0), count.getOrElse(0))))
     }
   }
 
   def completePlan: Route = {
     (post & auth) { user =>
       entity(as[CompletePlanArgs]) { args => {
-        if (api.userOwnedPlan(user.id, args.id)) {
-          api.completePlan(args.id)
+        if (db.userOwnedPlan(user.id, args.id)) {
+          db.completePlan(args.id)
           log.info(s"Plan #${args.id} completed")
           complete(StatusCodes.OK)
         }else
@@ -63,8 +67,8 @@ class PlansRouter @Inject()
   def failPlan: Route = {
     (post & auth) { user =>
       entity(as[FailPlanArgs]) { args => {
-        if (api.userOwnedPlan(user.id, args.id)) {
-          api.failPlan(args.id)
+        if (db.userOwnedPlan(user.id, args.id)) {
+          db.failPlan(args.id)
           log.info(s"Plan #${args.id} failed")
           complete(StatusCodes.OK)
         }else
@@ -77,8 +81,8 @@ class PlansRouter @Inject()
   def edit: Route = {
     (post & auth) { user =>
       entity(as[EditPlanArgs]) { args => {
-        if (api.userOwnedPlan(user.id, args.id) && api.userOwnedTag(user.id, args.tag) && api.userOwnedAccount(user.id, args.account)){
-          api.editPlan(args.id, args.delta, args.tag, Instant.ofEpochSecond(args.date), args.account, args.description, args.state)
+        if (db.userOwnedPlan(user.id, args.id) && tags.userOwnedTag(user.id, args.tag) && accounts.userOwnedAccount(user.id, args.account)){
+          db.editPlan(args.id, args.delta, args.tag, Instant.ofEpochSecond(args.date), args.account, args.description, args.state)
           complete(StatusCodes.OK)
         }else{
           complete(StatusCodes.Forbidden)
@@ -90,7 +94,7 @@ class PlansRouter @Inject()
 
   def getFuture: Route = {
     (get & auth) { user =>
-      complete(gson.toJson(api.getUserFuturePlans(user.id)))
+      complete(gson.toJson(db.getUserFuturePlans(user.id)))
     }
   }
 

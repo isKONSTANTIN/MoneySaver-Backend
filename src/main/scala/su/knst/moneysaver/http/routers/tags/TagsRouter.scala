@@ -3,7 +3,7 @@ package http.routers.tags
 
 import http.directives.Auth
 import utils.G.gson
-import utils.{API, GsonMessage}
+import utils.GsonMessage
 import utils.G._
 
 import scala.jdk.CollectionConverters._
@@ -21,17 +21,17 @@ import scala.collection.mutable
 
 class TagsRouter @Inject()
 (
-  api: API,
+  db: TagsDatabase,
   auth: Auth
 ) {
   protected val log: DefaultLogger = DefaultLogger("http", "tags")
 
   def add: Route = {
     (post & auth & entity(as[NewTagArgs])) { (user, args) =>
-      if (api.getUserTags(user.id).asScala.exists(t => t.name.equals(args.name)))
+      if (db.getUserTags(user.id).asScala.exists(t => t.name.equals(args.name)))
         complete(StatusCodes.Accepted)
       else {
-        val newId = api.newTag(user.id, args.name, args.kind, args.limit)
+        val newId = db.newTag(user.id, args.name, args.kind, args.limit)
         log.info(s"New tag #$newId added")
         complete(StatusCodes.Created)
       }
@@ -41,8 +41,8 @@ class TagsRouter @Inject()
 
   def edit: Route = {
     (post & auth & entity(as[EditTagArgs])) { (user, args) =>
-      if (api.userOwnedTag(user.id, args.id)){
-        api.editTag(args.id, args.name, args.kind, args.limit)
+      if (db.userOwnedTag(user.id, args.id)){
+        db.editTag(args.id, args.name, args.kind, args.limit)
         complete(StatusCodes.OK)
       } else
         complete(StatusCodes.Forbidden)
@@ -51,7 +51,7 @@ class TagsRouter @Inject()
 
   def main: Route = {
     (get & auth) { user =>
-      complete(gson.toJson(api.getUserTags(user.id)))
+      complete(gson.toJson(db.getUserTags(user.id)))
     }
   }
 

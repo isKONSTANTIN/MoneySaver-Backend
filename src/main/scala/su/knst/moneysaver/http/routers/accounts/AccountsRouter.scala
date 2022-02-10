@@ -3,7 +3,7 @@ package http.routers.accounts
 
 import http.directives.Auth
 import utils.G.gson
-import utils.{API, GsonMessage}
+import utils.GsonMessage
 import utils.G._
 
 import scala.jdk.CollectionConverters._
@@ -20,7 +20,7 @@ import scala.collection.mutable
 
 class AccountsRouter @Inject()
 (
-  api: API,
+  db: AccountsDatabase,
   auth: Auth
 ) {
   protected val log: DefaultLogger = DefaultLogger("http", "accounts")
@@ -28,7 +28,7 @@ class AccountsRouter @Inject()
   def add: Route = {
     (post & auth) { user =>
       entity(as[NewAccountArgs]) { args => {
-        val newId = api.newAccount(user.id, args.name)
+        val newId = db.newAccount(user.id, args.name)
 
         log.info(s"New account #$newId created")
         complete(StatusCodes.Created)
@@ -39,18 +39,18 @@ class AccountsRouter @Inject()
 
   def main: Route = {
     (get & auth) { user =>
-      complete(gson.toJson(api.getUserAccounts(user.id)))
+      complete(gson.toJson(db.getUserAccounts(user.id)))
     }
   }
 
   def transfer: Route = {
     (post & auth) { user =>
       entity(as[TransferArgs]) { args => {
-        val userAccounts = api.getUserAccounts(user.id).asScala
+        val userAccounts = db.getUserAccounts(user.id).asScala
         if (!userAccounts.exists(_.id == args.from) || !userAccounts.exists(_.id == args.to) || args.amount <= 0){
           complete(StatusCodes.BadRequest)
         }else {
-          api.accountTransfer(args.from, args.to, args.amount)
+          db.accountTransfer(args.from, args.to, args.amount)
 
           log.info(s"New account transfer: ${args.from} -> ${args.to}: ${args.amount}")
           complete(StatusCodes.OK)
@@ -63,8 +63,8 @@ class AccountsRouter @Inject()
   def setName: Route = {
     (post & auth) { user =>
       entity(as[SetNameAccountArgs]) { args => {
-        if (api.userOwnedAccount(user.id, args.id)) {
-          api.setAccountName(args.id, args.name)
+        if (db.userOwnedAccount(user.id, args.id)) {
+          db.setAccountName(args.id, args.name)
           log.info(s"Account #${args.id} renamed to '${args.name}'")
           complete(StatusCodes.OK)
         }else

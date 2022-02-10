@@ -12,7 +12,7 @@ import su.knst.moneysaver.objects.{Plan, Tag}
 import su.knst.moneysaver.utils.G.gson
 import su.knst.moneysaver.utils.logger.DefaultLogger
 import su.knst.moneysaver.{http, utils}
-import su.knst.moneysaver.utils.{API, GsonMessage}
+import su.knst.moneysaver.utils.GsonMessage
 
 import java.nio.charset.StandardCharsets
 import java.time.Instant
@@ -21,7 +21,6 @@ import scala.collection.mutable
 
 class ReceiptRouter @Inject()
 (
-  api: API,
   auth: Auth
 ) {
   protected val log: DefaultLogger = DefaultLogger("http", "receipt")

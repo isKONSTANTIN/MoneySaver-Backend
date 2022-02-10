@@ -12,7 +12,7 @@ import su.knst.moneysaver.{http, utils}
 import su.knst.moneysaver.objects.{Plan, Tag}
 import su.knst.moneysaver.utils.config.MainConfig
 import su.knst.moneysaver.utils.logger.DefaultLogger
-import su.knst.moneysaver.utils.{API, GsonMessage}
+import su.knst.moneysaver.utils.GsonMessage
 import utils.G._
 
 import java.time.Instant
@@ -21,7 +21,7 @@ import scala.collection.mutable
 
 class WebPushingRouter @Inject()
 (
-  api: API,
+  db: WebPushingDatabase,
   auth: Auth,
   config: MainConfig
 ) {
@@ -36,7 +36,7 @@ class WebPushingRouter @Inject()
   def set: Route = {
     (post & auth) { user =>
       entity(as[SetNotificationDataArgs]) { args => {
-        api.addUserNotificationData(user.id, args.endpoint, args.auth, args.p256dh)
+        db.addUserNotificationData(user.id, args.endpoint, args.auth, args.p256dh)
         log.info(s"Added new notify device at user ${user.id}")
         complete(StatusCodes.Accepted)
       }

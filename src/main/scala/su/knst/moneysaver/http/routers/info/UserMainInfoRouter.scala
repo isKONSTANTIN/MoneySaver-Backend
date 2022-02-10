@@ -4,7 +4,6 @@ package http.routers.info
 import akka.http.javadsl.model.HttpCharsets
 import akka.http.scaladsl.model.{ContentType, HttpEntity, MediaTypes, StatusCodes}
 import http.directives.Auth
-import utils.API
 import utils.G.gson
 import akka.http.scaladsl.server.Route
 import akka.http.scaladsl.server.Directives._
@@ -12,6 +11,7 @@ import akka.http.scaladsl.server.Directives._
 import scala.jdk.CollectionConverters._
 import com.github.tototoshi.csv.CSVWriter
 import com.google.inject.Inject
+import su.knst.moneysaver.http.routers.tags.TagsDatabase
 import su.knst.moneysaver.objects.Tag
 
 import java.io.File
@@ -22,13 +22,14 @@ import scala.collection.mutable
 
 class UserMainInfoRouter @Inject()
 (
-  api: API,
+  db: UserMainInfoDatabase,
+  tagsDatabase: TagsDatabase,
   auth: Auth
 ) {
 
   def createReport(user: Int, year: Int): File = {
-    val data: mutable.Map[Int, util.Map[Int, Double]] = api.changesPerYear(user, year).asScala
-    val tags = api.getUserTags(user).asScala.toSeq
+    val data: mutable.Map[Int, util.Map[Int, Double]] = db.changesPerYear(user, year).asScala
+    val tags = tagsDatabase.getUserTags(user).asScala.toSeq
 
     val months: Seq[String] = new DateFormatSymbols(new util.Locale("ru")).getShortMonths.toSeq
     val tmpFile: File = File.createTempFile(util.UUID.randomUUID().toString + LocalDateTime.now().toString, ".tmp")
@@ -81,19 +82,19 @@ class UserMainInfoRouter @Inject()
     path("monthChanges") {
       pathEnd {
         (get & auth) {
-          user => complete(gson.toJson(api.changesPerMonthByTags(user.id)))
+          user => complete(gson.toJson(db.changesPerMonthByTags(user.id)))
         }
       }
     } ~ path("dayChanges") {
       pathEnd {
         (get & auth & parameters("year".as[Int], "month".as[Int], "day".as[Int])) {
-          (user, year, month, day) => complete(gson.toJson(api.changesAtDayByTags(user.id, LocalDate.of(year, month, day))))
+          (user, year, month, day) => complete(gson.toJson(db.changesAtDayByTags(user.id, LocalDate.of(year, month, day))))
         }
       }
     } ~ path("yearChanges") {
       pathEnd {
         (get & auth & parameters("year".as[Int])) {
-          (user, year) => complete(gson.toJson(api.changesPerYear(user.id, year)))
+          (user, year) => complete(gson.toJson(db.changesPerYear(user.id, year)))
         }
       }
     } ~ path("report") {

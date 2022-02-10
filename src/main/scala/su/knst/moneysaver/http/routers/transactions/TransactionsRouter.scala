@@ -2,13 +2,15 @@ package su.knst.moneysaver
 package http.routers.transactions
 
 import http.directives.Auth
-import utils.{API, GsonMessage}
+import utils.GsonMessage
 import utils.G._
 import akka.http.scaladsl.model.{HttpMessage, StatusCodes}
 import akka.http.scaladsl.server.Directives._
 import akka.http.scaladsl.server.Route
 import akka.http.scaladsl.unmarshalling.{FromEntityUnmarshaller, PredefinedFromEntityUnmarshallers}
 import com.google.inject.Inject
+import su.knst.moneysaver.http.routers.accounts.AccountsDatabase
+import su.knst.moneysaver.http.routers.tags.TagsDatabase
 import su.knst.moneysaver.utils.logger.DefaultLogger
 
 import java.time.Instant
@@ -16,7 +18,9 @@ import scala.reflect.ClassTag
 
 class TransactionsRouter @Inject()
 (
-  api: API,
+  db: TransactionsDatabase,
+  tags: TagsDatabase,
+  accounts: AccountsDatabase,
   auth: Auth
 ) {
   protected val log: DefaultLogger = DefaultLogger("http", "transactions")
@@ -24,8 +28,8 @@ class TransactionsRouter @Inject()
   def add: Route = {
     (post & auth) { user =>
       entity(as[NewTransactionArgs]) { args => {
-        if (api.userOwnedTag(user.id, args.tag) && api.userOwnedAccount(user.id, args.account)) {
-          val newId = api.newTransaction(user.id, args.delta, args.tag, Instant.ofEpochSecond(args.date), args.account, args.description)
+        if (tags.userOwnedTag(user.id, args.tag) && accounts.userOwnedAccount(user.id, args.account)) {
+          val newId = db.newTransaction(user.id, args.delta, args.tag, Instant.ofEpochSecond(args.date), args.account, args.description)
 
           log.info(s"New transaction #$newId added")
           complete(StatusCodes.Created)
@@ -39,15 +43,15 @@ class TransactionsRouter @Inject()
 
   def month: Route = {
     (get & auth & parameters("offset".as[Int].optional, "count".as[Int].optional)) { (user, offset, count) =>
-      complete(gson.toJson(api.getUserTransactionsPerMonth(user.id, offset.getOrElse(0), count.getOrElse(10))))
+      complete(gson.toJson(db.getUserTransactionsPerMonth(user.id, offset.getOrElse(0), count.getOrElse(10))))
     }
   }
 
   def edit: Route = {
     (post & auth) { user =>
       entity(as[EditTransactionArgs]) { args => {
-        if (api.userOwnedTransaction(user.id, args.id)){
-          api.editTransaction(args.id, args.delta, args.tag, Instant.ofEpochSecond(args.date), args.account, args.description)
+        if (db.userOwnedTransaction(user.id, args.id)){
+          db.editTransaction(args.id, args.delta, args.tag, Instant.ofEpochSecond(args.date), args.account, args.description)
           log.info(s"Transaction #${args.id} edited")
           complete(StatusCodes.OK)
         }else {
@@ -61,8 +65,8 @@ class TransactionsRouter @Inject()
   def cancel: Route = {
     (post & auth) { user =>
       entity(as[CancelTransactionArgs]) { args => {
-        if (api.userOwnedTransaction(user.id, args.id)){
-          api.cancelTransaction(args.id)
+        if (db.userOwnedTransaction(user.id, args.id)){
+          db.cancelTransaction(args.id)
           log.info(s"Transaction #${args.id} canceled")
           complete(StatusCodes.OK)
         }else {
@@ -75,7 +79,7 @@ class TransactionsRouter @Inject()
 
   def main: Route = {
     (get & auth & parameters("offset".as[Int].optional, "count".as[Int].optional)) { (user, offset, count) =>
-      complete(gson.toJson(api.getUserTransactions(user.id, offset.getOrElse(0), count.getOrElse(10))))
+      complete(gson.toJson(db.getUserTransactions(user.id, offset.getOrElse(0), count.getOrElse(10))))
     }
   }
 
