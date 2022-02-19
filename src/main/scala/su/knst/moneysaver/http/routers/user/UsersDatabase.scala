@@ -6,9 +6,9 @@ import su.knst.moneysaver.exceptions.UserNotAuthorizedException
 import su.knst.moneysaver.http.routers.accounts.AccountsDatabase
 import su.knst.moneysaver.http.routers.plans.PlansDatabase
 import su.knst.moneysaver.http.routers.tags.TagsDatabase
+import su.knst.moneysaver.jooq.tables.Users.USERS
+import su.knst.moneysaver.jooq.tables.UsersSessions.USERS_SESSIONS
 import su.knst.moneysaver.objects.{AuthedUser, User, UserSession}
-import su.knst.moneysaver.public_.tables.Users.USERS
-import su.knst.moneysaver.public_.tables.UsersSessions.USERS_SESSIONS
 import su.knst.moneysaver.utils.Database
 import su.knst.moneysaver.utils.config.MainConfig
 

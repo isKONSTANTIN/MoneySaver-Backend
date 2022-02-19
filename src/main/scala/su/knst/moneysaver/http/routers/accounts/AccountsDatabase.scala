@@ -3,7 +3,7 @@ package su.knst.moneysaver.http.routers.accounts
 import com.google.inject.{Inject, Singleton}
 import org.jooq.impl.DSL
 import su.knst.moneysaver.objects.Account
-import su.knst.moneysaver.public_.tables.Accounts.ACCOUNTS
+import su.knst.moneysaver.jooq.tables.Accounts.ACCOUNTS
 import su.knst.moneysaver.utils.Database
 
 import java.util

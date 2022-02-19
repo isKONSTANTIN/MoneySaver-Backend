@@ -5,10 +5,10 @@ import org.jooq.Configuration
 import org.jooq.impl.DSL
 import su.knst.moneysaver.http.routers.pushing.WebPushingDatabase
 import su.knst.moneysaver.objects.{PushNotification, RepeatTransaction}
-import su.knst.moneysaver.public_.tables.Accounts.ACCOUNTS
-import su.knst.moneysaver.public_.tables.RepeatTransactions.REPEAT_TRANSACTIONS
-import su.knst.moneysaver.public_.tables.Tags.TAGS
-import su.knst.moneysaver.public_.tables.Transactions.TRANSACTIONS
+import su.knst.moneysaver.jooq.tables.Accounts.ACCOUNTS
+import su.knst.moneysaver.jooq.tables.RepeatTransactions.REPEAT_TRANSACTIONS
+import su.knst.moneysaver.jooq.tables.Tags.TAGS
+import su.knst.moneysaver.jooq.tables.Transactions.TRANSACTIONS
 import su.knst.moneysaver.utils.config.MainConfig
 import su.knst.moneysaver.utils.Database
 import su.knst.moneysaver.utils.logger.DefaultLogger

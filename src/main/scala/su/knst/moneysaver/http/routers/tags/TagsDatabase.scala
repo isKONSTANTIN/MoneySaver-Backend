@@ -2,7 +2,7 @@ package su.knst.moneysaver.http.routers.tags
 
 import com.google.inject.{Inject, Singleton}
 import su.knst.moneysaver.objects.Tag
-import su.knst.moneysaver.public_.tables.Tags.TAGS
+import su.knst.moneysaver.jooq.tables.Tags.TAGS
 import su.knst.moneysaver.utils.Database
 
 import java.util

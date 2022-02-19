@@ -1,7 +1,7 @@
 package su.knst.moneysaver.services
 
 import com.google.inject.{Inject, Singleton}
-import su.knst.moneysaver.public_.tables.ServicesData.SERVICES_DATA
+import su.knst.moneysaver.jooq.tables.ServicesData.SERVICES_DATA
 import su.knst.moneysaver.utils.Database
 
 import scala.jdk.OptionConverters.RichOptional

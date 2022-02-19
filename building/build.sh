@@ -2,11 +2,13 @@
 
 cd ../
 
-java -jar building/sbt-launch.jar assembly
-cp target/scala-2.13/MoneySaver-assembly-0.1.jar ./building/
+./gradlew build
+cp build/libs/MoneySaver.jar ./building/MoneySaver-raw.jar
 
 cd building
 
-java -jar allatori.jar  allatori.xml
+java -jar allatori.jar allatori.xml
 
-rm MoneySaver-assembly-0.1.jar
+rm MoneySaver-raw.jar
+
+docker build -t ms_backend .

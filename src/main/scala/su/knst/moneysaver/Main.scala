@@ -11,6 +11,7 @@ import java.io.{InputStream, OutputStream, PrintStream}
 import scala.concurrent.Await
 import scala.concurrent.duration.Duration
 import scala.io.StdIn.readLine
+import scala.util.control.Breaks.break
 
 object Main extends App {
   implicit val system = ActorSystem("main")
@@ -44,10 +45,10 @@ object Main extends App {
     logger.info("Starting server")
     val future = server.start()
 
-    while (true){
+    for (line <- Iterator.continually(readLine).takeWhile(_ != null)) {
       try {
         print("> ")
-        val line = readLine()
+
         fileLogger.log(line + "\n")
 
         inj.getInstance(classOf[CommandHandler])(line)
@@ -59,6 +60,7 @@ object Main extends App {
       }
     }
 
+    logger.warn("Console write cycle stopped")
     Await.result(future.flatMap(_.whenTerminated)(system.dispatcher), Duration.Inf)
   }finally system.terminate()
 }

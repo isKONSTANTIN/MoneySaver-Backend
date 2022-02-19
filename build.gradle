@@ -1,0 +1,137 @@
+plugins {
+    id 'scala'
+    id "application"
+    id 'nu.studer.jooq' version '7.1.1'
+    id "org.flywaydb.flyway" version "8.5.0"
+}
+
+archivesBaseName = 'MoneySaver'
+group 'su.knst.moneysaver'
+version '1.1'
+mainClassName = 'su.knst.moneysaver.Main'
+
+def versions = [
+        AkkaVersion: "2.6.10",
+        ScalaBinary: "2.13"
+]
+
+repositories {
+    mavenCentral()
+
+    flatDir {
+        dirs 'libs'
+    }
+}
+
+sourceSets {
+    main {
+        scala {
+            srcDirs = ['src/main/scala']
+        }
+    }
+}
+
+configurations.implementation.setCanBeResolved(true)
+
+dependencies {
+    implementation 'org.scala-lang:scala-library:2.13.6'
+    implementation "org.flywaydb:flyway-core:8.5.0"
+
+    implementation group: 'com.google.inject', name: 'guice', version: '4.0'
+    implementation group: 'org.bouncycastle', name: 'bcprov-jdk15on', version: '1.64'
+    implementation group: 'org.postgresql', name: 'postgresql', version: '42.1.4'
+    jooqGenerator 'org.postgresql:postgresql:42.1.4'
+    implementation 'com.google.code.gson:gson:2.9.0'
+
+    implementation 'org.jooq:jooq:3.16.4'
+    implementation group: 'org.jooq', name: 'jooq-codegen-maven', version: '3.15.4'
+    implementation group: 'org.jooq', name: 'jooq-meta', version: '3.15.5'
+
+    implementation group: 'org.mindrot', name: 'jbcrypt', version: '0.3m'
+    implementation group: 'com.wanari', name: 'web-push_2.13', version: '1.0-alfa'
+    implementation group: 'com.github.tototoshi', name: 'scala-csv_2.13', version: '1.3.10'
+
+    implementation group: 'ch.megard', name: 'akka-http-cors_2.13', version: '1.1.3'
+    implementation group: 'org.scalaj', name: 'scalaj-http_2.13', version: '2.4.2'
+    implementation platform("com.typesafe.akka:akka-http-bom_${versions.ScalaBinary}:10.2.8")
+    implementation "com.typesafe.akka:akka-actor-typed_${versions.ScalaBinary}:${versions.AkkaVersion}"
+    implementation "com.typesafe.akka:akka-stream_${versions.ScalaBinary}:${versions.AkkaVersion}"
+    implementation "com.typesafe.akka:akka-http_${versions.ScalaBinary}"
+}
+
+flyway {
+    url = 'jdbc:postgresql://192.168.1.122:5432/money_saver'
+    user = 'money_saver'
+    password = 'change_me'
+    schemas = ['public']
+}
+
+jooq {
+    configurations {
+        main {  // name of the jOOQ configuration
+
+            generateSchemaSourceOnCompilation = true  // default (can be omitted)
+
+            generationTool {
+                jdbc {
+                    driver = 'org.postgresql.Driver'
+                    url = 'jdbc:postgresql://192.168.1.122:5432/money_saver'
+                    user = 'money_saver'
+                    password = 'change_me'
+                    properties {
+                        property {
+                            key = 'ssl'
+                            value = 'false'
+                        }
+                    }
+                }
+                generator {
+                    name = 'org.jooq.codegen.DefaultGenerator'
+                    database {
+                        name = 'org.jooq.meta.postgres.PostgresDatabase'
+                        inputSchema = 'public'
+                        forcedTypes {
+                            forcedType {
+                                name = 'varchar'
+                                includeExpression = '.*'
+                                includeTypes = 'JSONB?'
+                            }
+                            forcedType {
+                                name = 'varchar'
+                                includeExpression = '.*'
+                                includeTypes = 'INET'
+                            }
+                        }
+                    }
+                    generate {
+                        deprecated = false
+                        records = true
+                        immutablePojos = true
+                        fluentSetters = true
+                    }
+                    target {
+                        packageName = 'su.knst.moneysaver.jooq'
+                        directory = 'build/generated-src/jooq/main'  // default (can be omitted)
+                    }
+                    strategy.name = 'org.jooq.codegen.DefaultGeneratorStrategy'
+                }
+            }
+        }
+    }
+}
+
+tasks.getByName("generateJooq").dependsOn("flywayMigrate")
+
+jar {
+    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+
+    from(configurations.implementation.collect { it.isDirectory() ? it : zipTree(it) }) {
+        exclude 'META-INF', 'META-INF/**'
+    }
+
+    manifest {
+        attributes 'Main-Class': mainClassName
+    }
+
+    archiveFileName.set(archivesBaseName + ".jar")
+}

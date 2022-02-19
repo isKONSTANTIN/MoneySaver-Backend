@@ -4,7 +4,7 @@ import akka.actor.ActorSystem
 import com.google.inject.{Inject, Singleton}
 import com.wanari.webpush.{PushService, Subscription, Utils}
 import su.knst.moneysaver.objects.{PushNotification, UserNotificationData}
-import su.knst.moneysaver.public_.tables.UsersNotifications.USERS_NOTIFICATIONS
+import su.knst.moneysaver.jooq.tables.UsersNotifications.USERS_NOTIFICATIONS
 import su.knst.moneysaver.utils.Database
 import su.knst.moneysaver.utils.G.gson
 import su.knst.moneysaver.utils.config.MainConfig

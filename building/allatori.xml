@@ -1,6 +1,6 @@
 <config>
 	<input>
-        	<jar in="MoneySaver-assembly-0.1.jar" out="MoneySaver-0.1.jar"/>
+        	<jar in="MoneySaver-raw.jar" out="MoneySaver.jar"/>
 	</input>
 	<classpath />
 

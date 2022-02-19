@@ -3,9 +3,9 @@ package su.knst.moneysaver.http.routers.transactions
 import com.google.inject.{Inject, Singleton}
 import org.jooq.impl.DSL
 import su.knst.moneysaver.objects.{RepeatTransaction, Transaction}
-import su.knst.moneysaver.public_.tables.Accounts.ACCOUNTS
-import su.knst.moneysaver.public_.tables.RepeatTransactions.REPEAT_TRANSACTIONS
-import su.knst.moneysaver.public_.tables.Transactions.TRANSACTIONS
+import su.knst.moneysaver.jooq.tables.Accounts.ACCOUNTS
+import su.knst.moneysaver.jooq.tables.RepeatTransactions.REPEAT_TRANSACTIONS
+import su.knst.moneysaver.jooq.tables.Transactions.TRANSACTIONS
 import su.knst.moneysaver.utils.Database
 import su.knst.moneysaver.utils.time.TaskTimes
 

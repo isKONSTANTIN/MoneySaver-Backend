@@ -3,7 +3,7 @@ package su.knst.moneysaver.http.routers.plans
 import com.google.inject.{Inject, Singleton}
 import su.knst.moneysaver.http.routers.transactions.TransactionsDatabase
 import su.knst.moneysaver.objects.Plan
-import su.knst.moneysaver.public_.tables.Plans.PLANS
+import su.knst.moneysaver.jooq.tables.Plans.PLANS
 import su.knst.moneysaver.utils.Database
 
 import java.time.{Instant, LocalDateTime, ZoneId, ZoneOffset}
