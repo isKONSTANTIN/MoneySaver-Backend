@@ -1,0 +1,11 @@
+build:
+  stage: build
+  script:
+    - cd building
+    - ./build.sh
+
+deploy:
+  stage: deploy
+  script:
+    - cd building
+    - ./push.sh

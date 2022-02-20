@@ -10,5 +10,3 @@ cd building
 java -jar allatori.jar allatori.xml
 
 rm MoneySaver-raw.jar
-
-docker build -t ms_backend .
