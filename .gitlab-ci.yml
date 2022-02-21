@@ -3,7 +3,10 @@ build:
   script:
     - cd building
     - ./build.sh
-
+  artifacts:
+    paths:
+      - building/MoneySaver.jar
+      - building/log.xml
 deploy:
   stage: deploy
   script:
