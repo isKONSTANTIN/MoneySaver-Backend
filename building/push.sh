@@ -1,6 +1,9 @@
 #!/bin/bash
 
-BRANCH=$(git rev-parse --abbrev-ref HEAD)
+BRANCH=$CI_COMMIT_BRANCH
+BRANCH=${BRANCH:-$(git rev-parse --abbrev-ref HEAD)}
+
+echo "Pushing $BRANCH..."
 
 docker build -t ms_backend .
 cat ./pass | docker login https://dockreg.knst.su/ --username ms_push --password-stdin
