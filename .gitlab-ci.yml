@@ -8,4 +8,4 @@ deploy:
   stage: deploy
   script:
     - cd building
-    - ./push.sh
+    - sudo ./push.sh
