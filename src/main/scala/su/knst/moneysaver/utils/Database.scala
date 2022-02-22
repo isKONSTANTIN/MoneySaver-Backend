@@ -18,7 +18,7 @@ class Database @Inject()(
 ) {
   var url: String = config.database.saveStringIfNull("url", "jdbc:postgresql://database/money_saver")
   var user: String = config.database.saveStringIfNull("user", "money_saver")
-  var password: String = config.database.saveStringIfNull("password", "change_me")
+  var password: String = config.database.saveStringIfNull("password", System.getenv("POSTGRES_PASSWORD"))
 
   val flyway: Flyway = Flyway.configure
     .dataSource(url, user, password)
