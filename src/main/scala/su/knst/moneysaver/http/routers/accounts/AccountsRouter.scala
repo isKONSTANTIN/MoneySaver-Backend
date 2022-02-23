@@ -12,11 +12,7 @@ import akka.http.scaladsl.model.StatusCodes
 import akka.http.scaladsl.server.Directives.{as, complete, entity, get, path, pathEnd, post}
 import akka.http.scaladsl.server.Route
 import com.google.inject.Inject
-import su.knst.moneysaver.objects.{Account, Plan, Tag}
 import su.knst.moneysaver.utils.logger.DefaultLogger
-
-import java.time.Instant
-import scala.collection.mutable
 
 class AccountsRouter @Inject()
 (

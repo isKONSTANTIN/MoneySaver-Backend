@@ -62,7 +62,7 @@ dependencies {
 flyway {
     url = 'jdbc:postgresql://192.168.1.122:5432/money_saver'
     user = 'money_saver'
-    password = 'change_me'
+    password = 'PWRDgvBvQOdUiDTiPNMhfkVXOmIIuZ'
     schemas = ['public']
 }
 
@@ -77,7 +77,7 @@ jooq {
                     driver = 'org.postgresql.Driver'
                     url = 'jdbc:postgresql://192.168.1.122:5432/money_saver'
                     user = 'money_saver'
-                    password = 'change_me'
+                    password = 'PWRDgvBvQOdUiDTiPNMhfkVXOmIIuZ'
                     properties {
                         property {
                             key = 'ssl'

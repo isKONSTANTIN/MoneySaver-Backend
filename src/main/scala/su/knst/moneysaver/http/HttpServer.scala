@@ -19,6 +19,7 @@ import su.knst.moneysaver.http.routers.tags.TagsRouter
 import su.knst.moneysaver.http.routers.transactions.TransactionsRouter
 import su.knst.moneysaver.http.routers.transactions.repeat.RepeatTransactionsRouter
 import ch.megard.akka.http.cors.scaladsl.settings.CorsSettings
+import su.knst.moneysaver.http.routers.admin.AdminRouter
 import su.knst.moneysaver.http.routers.pushing.WebPushingRouter
 import su.knst.moneysaver.http.routers.receipt.ReceiptRouter
 import su.knst.moneysaver.http.routers.user.UserRouter
@@ -43,7 +44,8 @@ class HttpServer @Inject()
   collector: ServiceCollector,
   user: UserRouter,
   receipt: ReceiptRouter,
-  webPushing: WebPushingRouter
+  webPushing: WebPushingRouter,
+  admin: AdminRouter
 ){
   protected val log: DefaultLogger = DefaultLogger("http")
 
@@ -93,6 +95,10 @@ class HttpServer @Inject()
 
           pathPrefix("pushing"){
             webPushing.route
+          },
+
+          pathPrefix("admin"){
+            admin.route
           }
         )
       }
