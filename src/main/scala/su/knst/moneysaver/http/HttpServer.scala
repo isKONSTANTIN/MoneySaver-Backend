@@ -22,6 +22,7 @@ import ch.megard.akka.http.cors.scaladsl.settings.CorsSettings
 import su.knst.moneysaver.http.routers.pushing.WebPushingRouter
 import su.knst.moneysaver.http.routers.receipt.ReceiptRouter
 import su.knst.moneysaver.http.routers.user.UserRouter
+import su.knst.moneysaver.init.InitBuilder
 import su.knst.moneysaver.services.ServiceCollector
 import su.knst.moneysaver.utils.logger.DefaultLogger
 
@@ -32,6 +33,7 @@ import scala.concurrent.Future
 class HttpServer @Inject()
 (
   implicit system: ActorSystem,
+  initBuilder: InitBuilder,
   transactions: TransactionsRouter,
   repeatTransactions: RepeatTransactionsRouter,
   tags: TagsRouter,
@@ -98,6 +100,7 @@ class HttpServer @Inject()
   }
 
   def start(): Future[Http.ServerBinding] = {
+    initBuilder.checkAll()
     Http().newServerAt("0.0.0.0", 8080).bind(routers)
   }
 }

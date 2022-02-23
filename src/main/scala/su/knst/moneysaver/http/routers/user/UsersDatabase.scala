@@ -103,6 +103,16 @@ class UsersDatabase @Inject()
       .execute()
   }
 
+  def checkPassword(id: Int, password: String) : Boolean = {
+    database.context
+      .select(USERS.PASSWORD)
+      .from(USERS)
+      .where(USERS.ID.eq(id))
+      .fetchOptional()
+      .map(_.value1()).map(BCrypt.checkpw(password, _))
+      .orElseThrow()
+  }
+
   def getUser(id: Int) : User = {
     database.context.selectFrom(USERS)
       .where(USERS.ID.eq(id))

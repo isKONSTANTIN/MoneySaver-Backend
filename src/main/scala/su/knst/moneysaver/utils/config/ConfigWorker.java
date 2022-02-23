@@ -78,7 +78,10 @@ public class ConfigWorker {
         while ((readed = reader.read(buffer)) != -1)
             builder.append(buffer, 0, readed);
 
-        cache = gson.fromJson(builder.toString(), cache.getClass());
+        HashMap<String, Map<String, String>> newCache = gson.fromJson(builder.toString(), cache.getClass());
+
+        if (newCache != null)
+            cache = newCache;
     }
 
     protected Map<String, String> getCategory(String category){

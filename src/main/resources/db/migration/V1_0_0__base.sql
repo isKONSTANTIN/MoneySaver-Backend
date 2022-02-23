@@ -1,6 +1,6 @@
 create table if not exists users
 (
-    id            serial,
+    id            serial primary key,
     email         text not null,
     password      text not null,
     receipt_token text not null
@@ -14,9 +14,7 @@ create unique index if not exists users_email_uindex
 
 create table if not exists transactions
 (
-    id          integer not null
-        constraint transaction_pk
-            primary key,
+    id          serial primary key,
     "user"      integer                                                 not null,
     delta       double precision                                        not null,
     tag         integer                                                 not null,
@@ -30,9 +28,7 @@ alter table transactions
 
 create table if not exists tags
 (
-    id      serial
-        constraint tags_pk
-            primary key,
+    id      serial primary key,
     "user"  integer          not null,
     name    text             not null,
     kind    integer          not null,
@@ -44,9 +40,7 @@ alter table tags
 
 create table if not exists repeat_transactions
 (
-    id          serial
-        constraint repeat_transactions_pk
-            primary key,
+    id          serial primary key,
     "user"      integer          not null,
     tag         integer          not null,
     delta       double precision not null,
@@ -63,9 +57,7 @@ alter table repeat_transactions
 
 create table if not exists plans
 (
-    id          serial
-        constraint plans_pk
-            primary key,
+    id          serial primary key,
     "user"      integer          not null,
     delta       double precision not null,
     tag         integer          not null,
@@ -80,9 +72,7 @@ alter table plans
 
 create table if not exists accounts
 (
-    id     serial
-        constraint accounts_pk
-            primary key,
+    id     serial primary key,
     "user" integer          not null,
     name   text             not null,
     amount double precision not null
@@ -103,9 +93,7 @@ alter table services_data
 
 create table if not exists users_notifications
 (
-    id       serial
-        constraint users_notifications_pk
-            primary key,
+    id       serial primary key,
     user_id  integer not null,
     endpoint text    not null,
     auth     text    not null,
@@ -117,9 +105,7 @@ alter table users_notifications
 
 create table if not exists users_sessions
 (
-    id         integer not null
-        constraint user_sessions_pk
-            primary key,
+    id         serial primary key,
     "user"     integer                                                   not null,
     session    uuid                                                      not null,
     expired_at timestamp                                                 not null
