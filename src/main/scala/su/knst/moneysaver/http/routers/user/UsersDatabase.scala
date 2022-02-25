@@ -4,6 +4,7 @@ import com.google.inject.{Inject, Singleton}
 import org.mindrot.jbcrypt.BCrypt
 import su.knst.moneysaver.exceptions.UserNotAuthorizedException
 import su.knst.moneysaver.http.routers.accounts.AccountsDatabase
+import su.knst.moneysaver.http.routers.admin.AdminDatabase
 import su.knst.moneysaver.http.routers.plans.PlansDatabase
 import su.knst.moneysaver.http.routers.tags.TagsDatabase
 import su.knst.moneysaver.jooq.tables.Users.USERS
@@ -20,6 +21,7 @@ import java.util.{Optional, UUID}
 class UsersDatabase @Inject()
 (
   database: Database,
+  adminDatabase: AdminDatabase,
   accounts: AccountsDatabase,
   tags: TagsDatabase,
   plans: PlansDatabase
@@ -76,10 +78,13 @@ class UsersDatabase @Inject()
       .set(USERS_SESSIONS.EXPIRED_AT, LocalDateTime.now().plusDays(7))
       .execute()
 
-    AuthedUser(authedUser, token)
+    AuthedUser(authedUser, token, adminDatabase.isAdmin(authedUser.id))
   }
 
-  def authUser(token: UUID): AuthedUser = AuthedUser(getUser(token), token)
+  def authUser(token: UUID): AuthedUser = {
+    val user = getUser(token)
+    AuthedUser(user, token, adminDatabase.isAdmin(user.id))
+  }
 
   def updateUserReceiptToken(id: Int, token: String): Unit = {
     database.context

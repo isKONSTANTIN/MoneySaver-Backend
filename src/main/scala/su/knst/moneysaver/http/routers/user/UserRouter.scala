@@ -82,7 +82,7 @@ class UserRouter @Inject()
 
   def main: Route = {
     (get & auth) { user => {
-      complete(gson.toJson(new AuthResult(user.token, user.email, user.receiptToken)))
+      complete(gson.toJson(user))
     }
     }
   }

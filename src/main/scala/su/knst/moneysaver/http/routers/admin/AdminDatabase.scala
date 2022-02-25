@@ -1,6 +1,7 @@
 package su.knst.moneysaver.http.routers.admin
 
 import com.google.inject.Inject
+import su.knst.moneysaver.http.routers.user.UsersDatabase
 import su.knst.moneysaver.jooq.tables.Users.USERS
 import su.knst.moneysaver.objects.{Transaction, User}
 import su.knst.moneysaver.utils.Database
@@ -16,5 +17,9 @@ class AdminDatabase @Inject()
       .orderBy(USERS.ID.desc)
       .limit(offset, count)
       .fetch().map(r => r.into(classOf[User]))
+  }
+
+  def isAdmin(id: Int) : Boolean = {
+    id == 1
   }
 }
