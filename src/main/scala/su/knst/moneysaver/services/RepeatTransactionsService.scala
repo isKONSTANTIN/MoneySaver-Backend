@@ -27,7 +27,7 @@ class RepeatTransactionsService @Inject()
   database: Database
 ) extends AbstractService(servicesDatabase) {
   protected val log: DefaultLogger = DefaultLogger("services", "repeat_transactions")
-  private implicit val domain: String = config.server.saveStringIfNull("url", "https://ms.knst.su/")
+  private implicit val domain: String = config.server.saveStringIfNull("url", System.getenv("BASE_URL"))
 
   override def repeatTime(): Long = 5_000
 

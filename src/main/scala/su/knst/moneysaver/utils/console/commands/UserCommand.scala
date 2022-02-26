@@ -15,7 +15,7 @@ class UserCommand @Inject()
   webPushingDatabase: WebPushingDatabase,
   users: UsersDatabase
 ) extends AbstractCommand{
-  private implicit val domain: String = config.server.saveStringIfNull("url", "https://ms.knst.su/")
+  private implicit val domain: String = config.server.saveStringIfNull("url", System.getenv("BASE_URL"))
 
   override def apply(args: List[String]): Unit = {
 

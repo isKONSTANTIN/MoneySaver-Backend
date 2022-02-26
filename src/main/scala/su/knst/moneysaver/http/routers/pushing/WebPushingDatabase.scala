@@ -19,7 +19,7 @@ class WebPushingDatabase @Inject()
   config: MainConfig,
   implicit val system: ActorSystem
 ) {
-  private implicit val domain: String = config.server.saveStringIfNull("url", "https://ms.knst.su/")
+  private implicit val domain: String = config.server.saveStringIfNull("url", System.getenv("BASE_URL"))
 
   def addUserNotificationData(user: Int, endpoint: String, auth: String, p256dh: String): Unit = {
     database.context

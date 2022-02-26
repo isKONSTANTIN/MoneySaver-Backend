@@ -27,7 +27,7 @@ class AdminRouter @Inject()
   users: UsersDatabase
 ) {
   protected val log: DefaultLogger = DefaultLogger("http", "admin")
-  private implicit val domain: String = config.server.saveStringIfNull("url", "https://ms.knst.su/")
+  private implicit val domain: String = config.server.saveStringIfNull("url", System.getenv("BASE_URL"))
 
   def registerUser: Route = {
     (post & auth) { _ =>
