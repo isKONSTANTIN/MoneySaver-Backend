@@ -9,4 +9,4 @@ EXPOSE 8080
 WORKDIR /ms
 COPY MoneySaver.jar ./
 
-ENTRYPOINT ["java", "-jar", "MoneySaver.jar"]
+ENTRYPOINT ["java", "-jar", "-Xmx64M", "MoneySaver.jar"]
