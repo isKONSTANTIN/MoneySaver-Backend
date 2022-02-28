@@ -13,6 +13,7 @@ import su.knst.moneysaver.objects.{AuthedUser, User, UserSession}
 import su.knst.moneysaver.utils.Database
 import su.knst.moneysaver.utils.config.MainConfig
 
+import java.time.temporal.{ChronoUnit}
 import java.time.{Instant, LocalDateTime, ZoneOffset}
 import java.util
 import java.util.{Optional, UUID}
@@ -144,11 +145,12 @@ class UsersDatabase @Inject()
       .orElseThrow(() => new UserNotAuthorizedException)
 
     if (session.expiredAt.isAfter(Instant.now())){
-      database.context
-        .update(USERS_SESSIONS)
-        .set(USERS_SESSIONS.EXPIRED_AT, LocalDateTime.now().plusDays(7))
-        .where(USERS_SESSIONS.ID.eq(session.id))
-        .execute()
+      if (session.expiredAt.isBefore(Instant.now().plus(6, ChronoUnit.DAYS)))
+        database.context // TODO: check whats wrong with it, take >30 ms
+          .update(USERS_SESSIONS)
+          .set(USERS_SESSIONS.EXPIRED_AT, LocalDateTime.now().plusDays(7))
+          .where(USERS_SESSIONS.ID.eq(session.id))
+          .execute()
 
       getUser(session.user)
     }else{
