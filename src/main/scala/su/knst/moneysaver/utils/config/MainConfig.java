@@ -10,7 +10,7 @@ public class MainConfig {
     public CategoryWorker database;
     public CategoryWorker webPush;
     public CategoryWorker server;
-
+    public CategoryWorker registration;
     protected static ConfigWorker main;
 
     public MainConfig(){
@@ -19,5 +19,6 @@ public class MainConfig {
         database = new CategoryWorker(main, "database");
         webPush = new CategoryWorker(main, "webPush");
         server = new CategoryWorker(main, "server");
+        registration = new CategoryWorker(main, "registration");
     }
 }

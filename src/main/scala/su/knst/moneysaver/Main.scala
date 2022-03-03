@@ -4,6 +4,7 @@ import akka.actor.ActorSystem
 import com.google.inject.{Binder, Guice, Module}
 import http.HttpServer
 import org.bouncycastle.jce.provider.BouncyCastleProvider
+import su.knst.moneysaver.utils.ServerOptions
 import su.knst.moneysaver.utils.console.CommandHandler
 import su.knst.moneysaver.utils.logger.{AbstractLogger, DefaultLogger, StreamLogger}
 
@@ -41,6 +42,10 @@ object Main extends App {
 
     logger.info("Init http server")
     val server = inj.getInstance(classOf[HttpServer])
+
+    logger.info("Init server options")
+
+    inj.getInstance(classOf[ServerOptions])
 
     logger.info("Starting server")
     val future = server.start()

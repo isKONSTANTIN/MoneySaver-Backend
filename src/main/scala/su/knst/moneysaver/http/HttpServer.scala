@@ -10,7 +10,7 @@ import akka.http.scaladsl.settings.RoutingSettings
 import com.google.inject.Singleton
 import ch.megard.akka.http.cors.scaladsl.CorsDirectives._
 import com.sun.net.httpserver.HttpServer
-import su.knst.moneysaver.exceptions.{UserNotAuthorizedException, WrongPasswordException}
+import su.knst.moneysaver.exceptions.{UserNotAuthorizedException, UserRegistrationExpired, WrongPasswordException}
 import su.knst.moneysaver.http.routers._
 import su.knst.moneysaver.http.routers.accounts.AccountsRouter
 import su.knst.moneysaver.http.routers.info.UserMainInfoRouter
@@ -22,7 +22,9 @@ import ch.megard.akka.http.cors.scaladsl.settings.CorsSettings
 import su.knst.moneysaver.http.routers.admin.AdminRouter
 import su.knst.moneysaver.http.routers.pushing.WebPushingRouter
 import su.knst.moneysaver.http.routers.receipt.ReceiptRouter
+import su.knst.moneysaver.http.routers.server.ServerInfoRouter
 import su.knst.moneysaver.http.routers.user.UserRouter
+import su.knst.moneysaver.http.routers.user.registration.UserRegistrationRouter
 import su.knst.moneysaver.init.InitBuilder
 import su.knst.moneysaver.services.ServiceCollector
 import su.knst.moneysaver.utils.logger.DefaultLogger
@@ -45,7 +47,9 @@ class HttpServer @Inject()
   user: UserRouter,
   receipt: ReceiptRouter,
   webPushing: WebPushingRouter,
-  admin: AdminRouter
+  admin: AdminRouter,
+  sinfo: ServerInfoRouter,
+  registration: UserRegistrationRouter
 ){
   protected val log: DefaultLogger = DefaultLogger("http")
 
@@ -53,6 +57,7 @@ class HttpServer @Inject()
     val exceptionHandler = ExceptionHandler {
       case _: UserNotAuthorizedException => complete(StatusCodes.Unauthorized)
       case _: WrongPasswordException => complete(StatusCodes.Unauthorized, "Wrong password")
+      case _: UserRegistrationExpired => complete(StatusCodes.Unauthorized, "Registration expired")
       case e: Exception => {
         log.error("Oops, unexpected error:")
         e.printStackTrace()
@@ -89,6 +94,10 @@ class HttpServer @Inject()
             info.route
           },
 
+          pathPrefix("server") {
+            sinfo.route
+          },
+
           pathPrefix("receipt") {
             receipt.route
           },
@@ -99,6 +108,10 @@ class HttpServer @Inject()
 
           pathPrefix("admin"){
             admin.route
+          },
+
+          pathPrefix("registration"){
+            registration.route
           }
         )
       }

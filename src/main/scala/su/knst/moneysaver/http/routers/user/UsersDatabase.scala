@@ -7,13 +7,14 @@ import su.knst.moneysaver.http.routers.accounts.AccountsDatabase
 import su.knst.moneysaver.http.routers.admin.AdminDatabase
 import su.knst.moneysaver.http.routers.plans.PlansDatabase
 import su.knst.moneysaver.http.routers.tags.TagsDatabase
+import su.knst.moneysaver.jooq.tables.UserRegistrations.USER_REGISTRATIONS
 import su.knst.moneysaver.jooq.tables.Users.USERS
 import su.knst.moneysaver.jooq.tables.UsersSessions.USERS_SESSIONS
 import su.knst.moneysaver.objects.{AuthedUser, User, UserSession}
 import su.knst.moneysaver.utils.Database
 import su.knst.moneysaver.utils.config.MainConfig
 
-import java.time.temporal.{ChronoUnit}
+import java.time.temporal.ChronoUnit
 import java.time.{Instant, LocalDateTime, ZoneOffset}
 import java.util
 import java.util.{Optional, UUID}
@@ -57,6 +58,15 @@ class UsersDatabase @Inject()
     )
 
     token
+  }
+
+  def userExist(email: String): Boolean = {
+    database.context
+      .fetchExists(
+        database.context
+        .selectFrom(USERS)
+        .where(USERS.EMAIL.eq(email))
+      )
   }
 
   def authUser(email: String, password: String): AuthedUser = {

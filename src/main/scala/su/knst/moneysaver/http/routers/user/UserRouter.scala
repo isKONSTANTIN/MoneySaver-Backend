@@ -44,6 +44,7 @@ class UserRouter @Inject()
   def updateReceiptToken(): Route = {
     (post & auth & entity(as[UpdateReceiptArgs])) { (user, receipt) => {
       db.updateUserReceiptToken(user.id, receipt.receipt)
+      auth.invalidateUser(user.id)
       log.info(s"Receipt token by ${user.id} updated")
       complete(StatusCodes.OK)
     }
