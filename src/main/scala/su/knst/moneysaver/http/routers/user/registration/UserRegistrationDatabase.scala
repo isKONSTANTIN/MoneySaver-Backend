@@ -4,6 +4,7 @@ import com.github.benmanes.caffeine.cache.{AsyncLoadingCache, Caffeine, LoadingC
 import com.google.inject.{Inject, Singleton}
 import org.jooq.impl.DSL
 import su.knst.moneysaver.exceptions.UserRegistrationExpired
+import su.knst.moneysaver.http.routers.admin.AdminDatabase
 import su.knst.moneysaver.jooq.tables.UserRegistrations
 import su.knst.moneysaver.jooq.tables.UserRegistrations.USER_REGISTRATIONS
 import su.knst.moneysaver.objects.{AuthedUser, Transaction, UserRegistrationData}
@@ -19,6 +20,7 @@ class UserRegistrationDatabase @Inject()
 (
   database: Database,
   options: ServerOptions,
+  admin: AdminDatabase,
   config: MainConfig
 ) {
   protected val limitsEnabled: Boolean = options.registration
@@ -47,12 +49,16 @@ class UserRegistrationDatabase @Inject()
     if (!limitsEnabled)
       return
 
+    val isAdmin = admin.isAdmin(user)
+
     database.context
       .insertInto(USER_REGISTRATIONS)
       .set(USER_REGISTRATIONS.USER, Int.box(user))
       .set(USER_REGISTRATIONS.REGISTRATION_TIME, LocalDateTime.now())
-      .set(USER_REGISTRATIONS.EXPIRES_IN, LocalDateTime.now().plusDays(userDefaultExpiresDays))
-      .set(USER_REGISTRATIONS.DEMO_ACCOUNT, Boolean.box(true))
+      .set(USER_REGISTRATIONS.EXPIRES_IN, {
+        if (isAdmin) LocalDateTime.MAX else LocalDateTime.now().plusDays(userDefaultExpiresDays)
+      })
+      .set(USER_REGISTRATIONS.DEMO_ACCOUNT, Boolean.box(!isAdmin))
       .execute()
 
     userRegistrationStatusCache.invalidate(user)

@@ -2,7 +2,7 @@ package su.knst.moneysaver
 package http.routers.transactions.repeat
 
 import http.directives.Auth
-import utils.GsonMessage
+import utils.{GsonMessage, StringValidator, StringValidatorSettings}
 import utils.G._
 
 import scala.jdk.CollectionConverters._
@@ -15,6 +15,7 @@ import su.knst.moneysaver.http.routers.accounts.AccountsDatabase
 import su.knst.moneysaver.http.routers.tags.TagsDatabase
 import su.knst.moneysaver.http.routers.transactions.TransactionsDatabase
 import su.knst.moneysaver.objects.{RepeatTransaction, Tag}
+import su.knst.moneysaver.utils.StringValidator.throwInvalid
 import su.knst.moneysaver.utils.logger.DefaultLogger
 
 import java.time.Instant
@@ -29,10 +30,13 @@ class RepeatTransactionsRouter @Inject()
   auth: Auth
 ) {
   protected val log: DefaultLogger = DefaultLogger("http", "repeat_transactions")
+  protected implicit val validSettings: StringValidatorSettings = StringValidator.settings(1, 1024, true)
 
   def add: Route = {
     (post & auth) { user =>
       entity(as[NewRepeatTransactionArgs]) { args => {
+        throwInvalid(args.description)
+
         if (tags.userOwnedTag(user.id, args.tag) && accounts.userOwnedAccount(user.id, args.account)) {
           val newId = db.newRepeatTransaction(user.id, args.tag, args.delta, args.account, args.repeatArg, Instant.ofEpochSecond(args.startRepeat), args.repeatFunc, args.description)
           log.info(s"New repeat transaction #$newId added")
@@ -62,7 +66,9 @@ class RepeatTransactionsRouter @Inject()
   def edit: Route = {
     (post & auth) { user =>
       entity(as[EditRepeatTransactionArgs]) { args => {
-        if (db.userOwnRepeatTransaction(user.id, args.id)){
+        throwInvalid(args.description)
+
+        if (db.userOwnRepeatTransaction(user.id, args.id) && tags.userOwnedTag(user.id, args.tag) && accounts.userOwnedAccount(user.id, args.account)){
           db.editRepeatTransaction(args.id, args.tag, args.delta, args.account, args.repeatArg, Instant.ofEpochSecond(args.lastRepeat), args.repeatFunc, args.description)
           complete(StatusCodes.OK)
         } else

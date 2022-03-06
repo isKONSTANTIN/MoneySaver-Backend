@@ -135,10 +135,12 @@ jar {
         attributes 'Main-Class': mainClassName
     }
 
-    doLast {
+    doFirst {
         def version = project.version.toString()
         def file = new File("$buildDir/resources/ms_version")
         file.write(version)
+        file.flush()
+        file.close()
     }
 
     archiveFileName.set(archivesBaseName + ".jar")

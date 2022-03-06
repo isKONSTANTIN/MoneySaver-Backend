@@ -7,7 +7,7 @@ import com.google.inject.Inject
 import su.knst.moneysaver.http.directives.Auth
 import su.knst.moneysaver.http.routers.user.UsersDatabase
 import su.knst.moneysaver.utils.G._
-import su.knst.moneysaver.utils.{GsonMessage, HttpResult, ServerOptions}
+import su.knst.moneysaver.utils.{GsonMessage, HttpResult, ServerOptions, StringValidator, StringValidatorSettings}
 import su.knst.moneysaver.utils.logger.DefaultLogger
 import akka.http.scaladsl.server.Directives._
 
@@ -32,7 +32,7 @@ class UserRegistrationRouter @Inject()
   def registration: Route = {
     if (options.registration)
       (post & entity(as[UserRegistrationArgs])) { args => {
-        if (user.userExist(args.email)){
+        if (user.userExist(args.email) || !StringValidator(args.email, 3, 32) || !StringValidator(args.password, 6, 32)){
           complete(StatusCodes.BadRequest)
         }else {
           complete(gson.toJson(

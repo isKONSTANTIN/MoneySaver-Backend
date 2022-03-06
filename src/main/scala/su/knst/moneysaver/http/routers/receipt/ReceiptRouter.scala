@@ -12,7 +12,8 @@ import su.knst.moneysaver.objects.{Plan, Tag}
 import su.knst.moneysaver.utils.G.gson
 import su.knst.moneysaver.utils.logger.DefaultLogger
 import su.knst.moneysaver.{http, utils}
-import su.knst.moneysaver.utils.GsonMessage
+import su.knst.moneysaver.utils.{GsonMessage, StringValidator, StringValidatorSettings}
+import su.knst.moneysaver.utils.StringValidator.throwInvalid
 
 import java.nio.charset.StandardCharsets
 import java.time.Instant
@@ -24,9 +25,12 @@ class ReceiptRouter @Inject()
   auth: Auth
 ) {
   protected val log: DefaultLogger = DefaultLogger("http", "receipt")
+  protected implicit val validSettings: StringValidatorSettings = StringValidator.settings(1, 1024 * 128, true)
 
   def check: Route = {
     (get & auth & parameters("args".as[String])) { (user, args) =>
+      throwInvalid(args)
+
       val userToken = user.receiptToken
       val dargs = new String(Base64.getDecoder.decode(args))
       log.info(s"User ${user.id} requested QR info: '$dargs'")

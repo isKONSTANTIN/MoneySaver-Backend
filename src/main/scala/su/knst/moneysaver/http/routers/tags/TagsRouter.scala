@@ -3,7 +3,7 @@ package http.routers.tags
 
 import http.directives.Auth
 import utils.G.gson
-import utils.GsonMessage
+import utils.{GsonMessage, StringValidator, StringValidatorSettings}
 import utils.G._
 
 import scala.jdk.CollectionConverters._
@@ -13,6 +13,7 @@ import akka.http.scaladsl.server.Directives.{as, complete, entity, get, path, pa
 import akka.http.scaladsl.server.Route
 import com.google.inject.Inject
 import su.knst.moneysaver.objects.Tag
+import su.knst.moneysaver.utils.StringValidator.throwInvalid
 import su.knst.moneysaver.utils.logger.DefaultLogger
 
 import java.time.Instant
@@ -25,9 +26,11 @@ class TagsRouter @Inject()
   auth: Auth
 ) {
   protected val log: DefaultLogger = DefaultLogger("http", "tags")
+  protected implicit val validSettings: StringValidatorSettings = StringValidator.settings(1, 1024, true)
 
   def add: Route = {
     (post & auth & entity(as[NewTagArgs])) { (user, args) =>
+      throwInvalid(args.name)
       if (db.getUserTags(user.id).asScala.exists(t => t.name.equals(args.name)))
         complete(StatusCodes.Accepted)
       else {
@@ -41,6 +44,7 @@ class TagsRouter @Inject()
 
   def edit: Route = {
     (post & auth & entity(as[EditTagArgs])) { (user, args) =>
+      throwInvalid(args.name)
       if (db.userOwnedTag(user.id, args.id)){
         db.editTag(args.id, args.name, args.kind, args.limit)
         complete(StatusCodes.OK)

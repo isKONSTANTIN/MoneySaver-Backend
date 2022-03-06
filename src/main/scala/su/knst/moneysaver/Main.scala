@@ -4,7 +4,7 @@ import akka.actor.ActorSystem
 import com.google.inject.{Binder, Guice, Module}
 import http.HttpServer
 import org.bouncycastle.jce.provider.BouncyCastleProvider
-import su.knst.moneysaver.utils.ServerOptions
+import su.knst.moneysaver.utils.{ServerOptions, StringValidator}
 import su.knst.moneysaver.utils.console.CommandHandler
 import su.knst.moneysaver.utils.logger.{AbstractLogger, DefaultLogger, StreamLogger}
 

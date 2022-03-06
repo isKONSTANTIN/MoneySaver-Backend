@@ -3,7 +3,7 @@ package http.routers.plans
 
 import http.directives.Auth
 import utils.G.gson
-import utils.GsonMessage
+import utils.{GsonMessage, StringValidator, StringValidatorSettings}
 import utils.G._
 
 import scala.jdk.CollectionConverters._
@@ -15,6 +15,7 @@ import com.google.inject.Inject
 import su.knst.moneysaver.http.routers.accounts.AccountsDatabase
 import su.knst.moneysaver.http.routers.tags.TagsDatabase
 import su.knst.moneysaver.objects.{Plan, Tag}
+import su.knst.moneysaver.utils.StringValidator.throwInvalid
 import su.knst.moneysaver.utils.logger.DefaultLogger
 
 import java.time.Instant
@@ -28,10 +29,13 @@ class PlansRouter @Inject()
   auth: Auth
 ) {
   protected val log: DefaultLogger = DefaultLogger("http", "plans")
+  protected implicit val validSettings: StringValidatorSettings = StringValidator.settings(1, 1024, true)
 
   def add: Route = {
     (post & auth) { user =>
       entity(as[NewPlanArgs]) { args => {
+        throwInvalid(args.description)
+
         if (tags.userOwnedTag(user.id, args.tag) && accounts.userOwnedAccount(user.id, args.account)) {
           val newId = db.newPlan(user.id, args.delta, args.tag, Instant.ofEpochSecond(args.date), args.account, args.description, 0)
           log.info(s"New plan #$newId created")
@@ -81,6 +85,8 @@ class PlansRouter @Inject()
   def edit: Route = {
     (post & auth) { user =>
       entity(as[EditPlanArgs]) { args => {
+        throwInvalid(args.description)
+
         if (db.userOwnedPlan(user.id, args.id) && tags.userOwnedTag(user.id, args.tag) && accounts.userOwnedAccount(user.id, args.account)){
           db.editPlan(args.id, args.delta, args.tag, Instant.ofEpochSecond(args.date), args.account, args.description, args.state)
           complete(StatusCodes.OK)

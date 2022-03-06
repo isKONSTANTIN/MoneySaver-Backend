@@ -3,9 +3,9 @@ package http.routers.user
 
 import akka.actor.ActorSystem
 import http.directives.Auth
-import utils.GsonMessage
+import utils.{GsonMessage, HttpResult, StringValidator, StringValidatorSettings}
+import StringValidator._
 import utils.G.gson
-import utils.HttpResult
 import utils.G._
 import akka.http.scaladsl.model.StatusCodes
 import akka.http.scaladsl.server.Directives._
@@ -31,9 +31,12 @@ class UserRouter @Inject()
   auth: Auth
 ){
   protected val log: DefaultLogger = DefaultLogger("http", "user")
+  protected implicit val validSettings: StringValidatorSettings = StringValidator.settings(1, 1024, true)
 
   def authR: Route = {
     (post & entity(as[AuthArgs])) { args => {
+      throwInvalid(args.email, args.password)
+
       val user : AuthedUser = db.authUser(args.email, args.password)
 
       complete(gson.toJson(user))
@@ -43,6 +46,8 @@ class UserRouter @Inject()
 
   def updateReceiptToken(): Route = {
     (post & auth & entity(as[UpdateReceiptArgs])) { (user, receipt) => {
+      throwInvalid(receipt.receipt)
+
       db.updateUserReceiptToken(user.id, receipt.receipt)
       auth.invalidateUser(user.id)
       log.info(s"Receipt token by ${user.id} updated")
@@ -53,6 +58,8 @@ class UserRouter @Inject()
 
   def changePassword: Route = {
     (post & auth & entity(as[UpdatePasswordArgs])) { (user, args) => {
+      throwInvalid(args.oldPassword, args.newPassword)
+
       if (!BCrypt.checkpw(args.oldPassword, db.getUser(user.email).password))
         throw new WrongPasswordException
 

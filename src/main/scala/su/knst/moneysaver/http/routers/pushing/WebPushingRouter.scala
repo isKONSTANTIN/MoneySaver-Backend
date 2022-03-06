@@ -10,9 +10,10 @@ import scalaj.http.{Http, HttpOptions}
 import su.knst.moneysaver.http.directives.Auth
 import su.knst.moneysaver.{http, utils}
 import su.knst.moneysaver.objects.{Plan, Tag}
+import su.knst.moneysaver.utils.StringValidator.throwInvalid
 import su.knst.moneysaver.utils.config.MainConfig
 import su.knst.moneysaver.utils.logger.DefaultLogger
-import su.knst.moneysaver.utils.GsonMessage
+import su.knst.moneysaver.utils.{GsonMessage, StringValidator, StringValidatorSettings}
 import utils.G._
 
 import java.time.Instant
@@ -26,6 +27,7 @@ class WebPushingRouter @Inject()
   config: MainConfig
 ) {
   protected val log: DefaultLogger = DefaultLogger("http", "pushing")
+  protected implicit val validSettings: StringValidatorSettings = StringValidator.settings(1, 1024, true)
 
   def publicKey : Route = {
     (get & auth) { user =>
@@ -36,6 +38,8 @@ class WebPushingRouter @Inject()
   def set: Route = {
     (post & auth) { user =>
       entity(as[SetNotificationDataArgs]) { args => {
+        throwInvalid(args.endpoint, args.auth, args.p256dh)
+
         db.addUserNotificationData(user.id, args.endpoint, args.auth, args.p256dh)
         log.info(s"Added new notify device at user ${user.id}")
         complete(StatusCodes.Accepted)

@@ -2,7 +2,7 @@ package su.knst.moneysaver
 package http.routers.transactions
 
 import http.directives.Auth
-import utils.GsonMessage
+import utils.{GsonMessage, StringValidator, StringValidatorSettings}
 import utils.G._
 import akka.http.scaladsl.model.{HttpMessage, StatusCodes}
 import akka.http.scaladsl.server.Directives._
@@ -11,6 +11,7 @@ import akka.http.scaladsl.unmarshalling.{FromEntityUnmarshaller, PredefinedFromE
 import com.google.inject.Inject
 import su.knst.moneysaver.http.routers.accounts.AccountsDatabase
 import su.knst.moneysaver.http.routers.tags.TagsDatabase
+import su.knst.moneysaver.utils.StringValidator.throwInvalid
 import su.knst.moneysaver.utils.logger.DefaultLogger
 
 import java.time.Instant
@@ -24,10 +25,13 @@ class TransactionsRouter @Inject()
   auth: Auth
 ) {
   protected val log: DefaultLogger = DefaultLogger("http", "transactions")
+  protected implicit val validSettings: StringValidatorSettings = StringValidator.settings(1, 1024, true)
 
   def add: Route = {
     (post & auth) { user =>
       entity(as[NewTransactionArgs]) { args => {
+        throwInvalid(args.description)
+
         if (tags.userOwnedTag(user.id, args.tag) && accounts.userOwnedAccount(user.id, args.account)) {
           val newId = db.newTransaction(user.id, args.delta, args.tag, Instant.ofEpochSecond(args.date), args.account, args.description)
 
@@ -50,7 +54,9 @@ class TransactionsRouter @Inject()
   def edit: Route = {
     (post & auth) { user =>
       entity(as[EditTransactionArgs]) { args => {
-        if (db.userOwnedTransaction(user.id, args.id)){
+        throwInvalid(args.description)
+
+        if (db.userOwnedTransaction(user.id, args.id) && tags.userOwnedTag(user.id, args.tag) && accounts.userOwnedAccount(user.id, args.account)){
           db.editTransaction(args.id, args.delta, args.tag, Instant.ofEpochSecond(args.date), args.account, args.description)
           log.info(s"Transaction #${args.id} edited")
           complete(StatusCodes.OK)

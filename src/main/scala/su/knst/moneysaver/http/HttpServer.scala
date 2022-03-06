@@ -58,6 +58,7 @@ class HttpServer @Inject()
       case _: UserNotAuthorizedException => complete(StatusCodes.Unauthorized)
       case _: WrongPasswordException => complete(StatusCodes.Unauthorized, "Wrong password")
       case _: UserRegistrationExpired => complete(StatusCodes.Unauthorized, "Registration expired")
+      case _: IllegalArgumentException => complete(StatusCodes.BadRequest)
       case e: Exception => {
         log.error("Oops, unexpected error:")
         e.printStackTrace()
@@ -69,7 +70,9 @@ class HttpServer @Inject()
       pathPrefix("api") {
         concat(
           pathPrefix("user") {
-            user.route
+            pathPrefix("registration"){
+              registration.route
+            } ~ user.route
           },
 
           pathPrefix("transactions") {
@@ -108,10 +111,6 @@ class HttpServer @Inject()
 
           pathPrefix("admin"){
             admin.route
-          },
-
-          pathPrefix("registration"){
-            registration.route
           }
         )
       }
