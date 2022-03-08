@@ -3,7 +3,7 @@ package su.knst.moneysaver.http.routers.admin
 import su.knst.moneysaver.{http, utils}
 import http.directives.Auth
 import utils.G.gson
-import utils.GsonMessage
+import utils.{GsonMessage, HttpResult}
 import utils.G._
 
 import scala.jdk.CollectionConverters._
@@ -94,5 +94,5 @@ class AdminRouter @Inject()
   class ChangeUserPasswordArgs(val email: String, val password: String) extends GsonMessage
   class RegisterUserArgs(val email: String, val password: String) extends GsonMessage
 
-  class NotificationResult(val devices: Int)
+  class NotificationResult(val devices: Int) extends HttpResult
 }
