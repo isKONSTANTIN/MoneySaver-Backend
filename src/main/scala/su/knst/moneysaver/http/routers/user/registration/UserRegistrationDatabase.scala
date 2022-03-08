@@ -56,7 +56,7 @@ class UserRegistrationDatabase @Inject()
       .set(USER_REGISTRATIONS.USER, Int.box(user))
       .set(USER_REGISTRATIONS.REGISTRATION_TIME, LocalDateTime.now())
       .set(USER_REGISTRATIONS.EXPIRES_IN, {
-        if (isAdmin) LocalDateTime.MAX else LocalDateTime.now().plusDays(userDefaultExpiresDays)
+        if (isAdmin) LocalDateTime.now().plusYears(100) else LocalDateTime.now().plusDays(userDefaultExpiresDays)
       })
       .set(USER_REGISTRATIONS.DEMO_ACCOUNT, Boolean.box(!isAdmin))
       .execute()
