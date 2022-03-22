@@ -25,7 +25,7 @@ class TransactionsRouter @Inject()
   auth: Auth
 ) {
   protected val log: DefaultLogger = DefaultLogger("http", "transactions")
-  protected implicit val validSettings: StringValidatorSettings = StringValidator.settings(1, 1024, true)
+  protected implicit val validSettings: StringValidatorSettings = StringValidator.settings(0, 1024, true)
 
   def add: Route = {
     (post & auth) { user =>
