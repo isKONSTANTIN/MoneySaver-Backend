@@ -2,7 +2,7 @@ package su.knst.moneysaver
 package http.routers.transactions
 
 import http.directives.Auth
-import utils.{GsonMessage, StringValidator, StringValidatorSettings}
+import utils.{G, GsonMessage, StringValidator, StringValidatorSettings}
 import utils.G._
 import akka.http.scaladsl.model.{HttpMessage, StatusCodes}
 import akka.http.scaladsl.server.Directives._
@@ -84,8 +84,14 @@ class TransactionsRouter @Inject()
   }
 
   def main: Route = {
-    (get & auth & parameters("offset".as[Int].optional, "count".as[Int].optional)) { (user, offset, count) =>
-      complete(gson.toJson(db.getUserTransactions(user.id, offset.getOrElse(0), count.getOrElse(10))))
+    (get & auth & parameters("offset".as[Int].optional, "count".as[Int].optional, "filter".as[String].optional)) { (user, offset, count, filter) =>
+      val filterObj : TransactionsFilter = filter.map(f => gson.fromJson(f, classOf[TransactionsFilter])).getOrElse(TransactionsFilter.EMPTY)
+
+      complete(
+        gson.toJson(
+          db.getUserTransactions(user.id, offset.getOrElse(0), count.getOrElse(10), filterObj)
+        )
+      )
     }
   }
 

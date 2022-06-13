@@ -120,9 +120,26 @@ class TransactionsDatabase @Inject()
     newId
   }
 
-  def getUserTransactions(user: Int, offset: Int, count: Int): util.List[Transaction] = {
-    database.context.selectFrom(TRANSACTIONS)
+  def getUserTransactions(user: Int, offset: Int, count: Int, filter: TransactionsFilter = TransactionsFilter.EMPTY): util.List[Transaction] = {
+    var request = database.context.selectFrom(TRANSACTIONS)
       .where(TRANSACTIONS.USER.eq(user))
+
+    if (filter.tag != 0)
+      request = request.and(TRANSACTIONS.TAG.eq(filter.tag))
+
+    if (filter.account != 0)
+      request = request.and(TRANSACTIONS.ACCOUNT.eq(filter.account))
+
+    if (filter.dateFrom != 0)
+      request = request.and(TRANSACTIONS.DATE.greaterOrEqual(Instant.ofEpochMilli(filter.dateFrom).atZone(ZoneId.systemDefault()).toLocalDate.atStartOfDay()))
+
+    if (filter.dateUpTo != 0)
+      request = request.and(TRANSACTIONS.DATE.lessOrEqual(Instant.ofEpochMilli(filter.dateUpTo).atZone(ZoneId.systemDefault()).toLocalDate.atTime(23, 59)))
+
+    if (filter.descriptionContains != null && filter.descriptionContains.nonEmpty)
+      request = request.and(TRANSACTIONS.DESCRIPTION.contains(filter.descriptionContains))
+
+    request
       .orderBy(TRANSACTIONS.DATE.desc, TRANSACTIONS.ID.desc)
       .limit(offset, count)
       .fetch().map(r => r.into(classOf[Transaction]))
