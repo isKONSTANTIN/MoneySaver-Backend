@@ -62,9 +62,9 @@ dependencies {
 }
 
 flyway {
-    url = 'jdbc:postgresql://192.168.1.122:5432/money_saver'
+    url = 'jdbc:postgresql://localhost:5432/money_saver'
     user = 'money_saver'
-    password = 'PWRDgvBvQOdUiDTiPNMhfkVXOmIIuZ'
+    password = 'change_me'
     schemas = ['public']
 }
 
@@ -77,9 +77,9 @@ jooq {
             generationTool {
                 jdbc {
                     driver = 'org.postgresql.Driver'
-                    url = 'jdbc:postgresql://192.168.1.122:5432/money_saver'
+                    url = 'jdbc:postgresql://localhost:5432/money_saver'
                     user = 'money_saver'
-                    password = 'PWRDgvBvQOdUiDTiPNMhfkVXOmIIuZ'
+                    password = 'change_me'
                     properties {
                         property {
                             key = 'ssl'
@@ -123,6 +123,7 @@ jooq {
 }
 
 tasks.getByName("generateJooq").dependsOn("flywayMigrate")
+tasks.getByName("flywayMigrate").dependsOn("startPostgres")
 
 jar {
     duplicatesStrategy = DuplicatesStrategy.EXCLUDE

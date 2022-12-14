@@ -1,14 +1,15 @@
+stages:
+  - build
+
 build:
   stage: build
+  services:
+    - postgres:13.3
+  variables:
+    POSTGRES_DB: "money_saver"
+    POSTGRES_USER: "money_saver"
+    POSTGRES_PASSWORD: "change_me"
   script:
-    - cd building
-    - ./build.sh
-  artifacts:
-    paths:
-      - building/MoneySaver.jar
-      - building/log.xml
-deploy:
-  stage: deploy
-  script:
-    - cd building
-    - sudo BRANCH=master ./push.sh
+    - docker login -u ${REGISTRY_USERNAME} -p ${REGISTRY_PASS} lab.knrg.su:5000
+    - docker build -t lab.knrg.su:5000/iskonstantin/moneysaver-backend .
+    - docker push lab.knrg.su:5000/iskonstantin/moneysaver-backend
