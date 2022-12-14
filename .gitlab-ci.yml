@@ -12,6 +12,6 @@ build:
     POSTGRES_USER: "money_saver"
     POSTGRES_PASSWORD: "change_me"
   script:
-    - docker login -u ${REGISTRY_USERNAME} -p ${REGISTRY_PASS} lab.knrg.su:5000
+    - docker login lab.knrg.su:5000 -u ${REGISTRY_USERNAME} -p ${REGISTRY_PASS}
     - docker build -t lab.knrg.su:5000/iskonstantin/moneysaver-backend .
     - docker push lab.knrg.su:5000/iskonstantin/moneysaver-backend

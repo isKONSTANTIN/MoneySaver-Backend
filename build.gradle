@@ -71,7 +71,6 @@ flyway {
 jooq {
     configurations {
         main {  // name of the jOOQ configuration
-
             generateSchemaSourceOnCompilation = true  // default (can be omitted)
 
             generationTool {
@@ -123,7 +122,6 @@ jooq {
 }
 
 tasks.getByName("generateJooq").dependsOn("flywayMigrate")
-tasks.getByName("flywayMigrate").dependsOn("startPostgres")
 
 jar {
     duplicatesStrategy = DuplicatesStrategy.EXCLUDE
