@@ -5,6 +5,8 @@ build:
   stage: build
   services:
     - postgres:13.3
+    - docker:dind
+  image: docker:stable
   variables:
     POSTGRES_DB: "money_saver"
     POSTGRES_USER: "money_saver"
