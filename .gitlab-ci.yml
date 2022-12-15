@@ -12,12 +12,13 @@ build:
         POSTGRES_PASSWORD: "change_me"
 
     - name: docker:dind
+      alias: dockerhost
       entrypoint: ["dockerd-entrypoint.sh", "--tls=false"]
 
   image: docker:stable
 
   variables:
-    DOCKER_HOST: tcp://127.0.0.1:2375
+    DOCKER_HOST: tcp://dockerhost:2375
   script:
     - docker login -u ${REGISTRY_USERNAME} -p ${REGISTRY_PASS} https://lab.knrg.su:5000
     - docker build -t lab.knrg.su:5000/iskonstantin/moneysaver-backend .
