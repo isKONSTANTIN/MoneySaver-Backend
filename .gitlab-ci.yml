@@ -1,16 +1,32 @@
 stages:
   - build
+  - build-docker
 
 build:
   stage: build
-  image: docker:stable
+  image: gradle:jdk11-alpine
 
   services:
     - name: postgres:13.3
+      alias: postgres
       variables:
         POSTGRES_DB: "money_saver"
         POSTGRES_USER: "money_saver"
         POSTGRES_PASSWORD: "change_me"
+
+  script:
+    - gradle build
+    - cp build/libs/MoneySaver.jar ./
+
+  artifacts:
+    paths:
+      - MoneySaver.jar
+    expire_in: 1 day
+
+build-docker:
+  stage: build-docker
+  image: docker:stable
+
   script:
     - docker login -u ${REGISTRY_USERNAME} -p ${REGISTRY_PASS} https://lab.knrg.su:5000
     - docker build -t lab.knrg.su:5000/iskonstantin/moneysaver-backend .
