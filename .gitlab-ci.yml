@@ -5,13 +5,11 @@ build:
   stage: build
   services:
     - postgres:13.3
-    - docker:dind
-  image: docker:stable
   variables:
     POSTGRES_DB: "money_saver"
     POSTGRES_USER: "money_saver"
     POSTGRES_PASSWORD: "change_me"
   script:
-    - docker login lab.knrg.su:5000 -u ${REGISTRY_USERNAME} -p ${REGISTRY_PASS}
+    - docker login -u ${REGISTRY_USERNAME} -p ${REGISTRY_PASS} https://lab.knrg.su:5000
     - docker build -t lab.knrg.su:5000/iskonstantin/moneysaver-backend .
     - docker push lab.knrg.su:5000/iskonstantin/moneysaver-backend
