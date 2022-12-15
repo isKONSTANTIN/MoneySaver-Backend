@@ -11,7 +11,7 @@ build:
         POSTGRES_DB: "money_saver"
         POSTGRES_USER: "money_saver"
         POSTGRES_PASSWORD: "change_me"
-
+        DB_HOST: 127.0.0.1
   script:
     - docker login -u ${REGISTRY_USERNAME} -p ${REGISTRY_PASS} https://lab.knrg.su:5000
     - docker build -t lab.knrg.su:5000/iskonstantin/moneysaver-backend .
