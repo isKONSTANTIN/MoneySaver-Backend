@@ -3,14 +3,21 @@ stages:
 
 build:
   stage: build
+
   services:
-    - postgres:13.3
-    - docker:dind
+    - name: postgres:13.3
+      variables:
+        POSTGRES_DB: "money_saver"
+        POSTGRES_USER: "money_saver"
+        POSTGRES_PASSWORD: "change_me"
+
+    - name: docker:dind
+      entrypoint: ["dockerd-entrypoint.sh", "--tls=false"]
+
   image: docker:stable
+
   variables:
-    POSTGRES_DB: "money_saver"
-    POSTGRES_USER: "money_saver"
-    POSTGRES_PASSWORD: "change_me"
+    DOCKER_HOST: tcp://127.0.0.1:2375
   script:
     - docker login -u ${REGISTRY_USERNAME} -p ${REGISTRY_PASS} https://lab.knrg.su:5000
     - docker build -t lab.knrg.su:5000/iskonstantin/moneysaver-backend .
